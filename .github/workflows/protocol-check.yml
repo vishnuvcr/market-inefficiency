@@ -24,6 +24,9 @@ jobs:
       - name: Validate repository protocol
         run: python scripts/validate_protocol.py
 
+      - name: Validate Phase 2 data contract
+        run: python scripts/validate_data_schema.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
@@ -32,5 +35,7 @@ jobs:
             RESEARCH_PLAN.md
             STATUS.md
             config/research_config.json
+            config/data_schema.json
             docs/HYPOTHESES.md
             docs/VALIDATION_FRAMEWORK.md
+            docs/DATA_SPECIFICATION.md
