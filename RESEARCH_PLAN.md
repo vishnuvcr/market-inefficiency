@@ -52,18 +52,18 @@ Subphases:
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
 
-**Status: ~45% — schema/PIT controls, adapter interfaces, synthetic validation and the first NSE F&O EOD normalization path are implemented; real-source acceptance remains.**
+**Status: ~55% — schema/PIT controls, adapter interfaces, synthetic validation, NSE F&O EOD normalization, quality diagnostics, point-in-time contract reconciliation and snapshot-manifest tooling are implemented; real-source acceptance remains.**
 
 Subphases:
 - 2.1 **Source inventory and acquisition plan — complete.** Official NSE and RBI data surfaces have been identified; paid/licensed high-resolution data gaps are explicitly recorded.
 - 2.2 **Adapter interfaces and first normalization path — substantially complete.** Canonical interfaces are defined, and `DS-NSE-FO-EOD` now has a deterministic CSV normalization path. Remaining adapters are interface-ready.
 - 2.3 **Underlying OHLCV pipeline — interface-ready.** Real-source ingestion and corporate-action reconciliation pending.
 - 2.4 **Full option-chain history — acquisition validation required.** Required fields: timestamp, underlying, expiry, strike, call/put, bid/ask, LTP, volume, OI, quote size/depth, multiplier/lot size and settlement.
-- 2.5 **Contract-specification/version history — interface-ready.** Effective-date joins are mandatory.
+- 2.5 **Contract-specification/version history — tooling implemented; real-source reconciliation pending.** Effective-date and information-availability joins are mandatory.
 - 2.6 **Risk-free rate and India VIX inputs — interface-ready.**
 - 2.7 **Intraday/order-trade data — access decision required.** Needed for execution/microstructure work and potentially for rigorous quote-based option studies.
-- 2.8 **Data-quality and point-in-time tests — synthetic fixture implemented; real-data validation pending.**
-- 2.9 **Immutable dataset snapshots and hashes — contract defined; first real snapshot pending acquisition.**
+- 2.8 **Data-quality and point-in-time tests — synthetic CI implemented; exclusion-code diagnostics and contract as-of reconciliation are now automated; real-data validation pending.**
+- 2.9 **Immutable dataset snapshots and hashes — manifest generator implemented; first real snapshot pending acquisition.**
 
 **Phase 2 data-availability rule:** public EOD data can support the first layer of descriptive and stylized-fact research, but historical bid/ask/depth coverage must be independently verified before any executable option strategy is backtested. The current option-chain interface is not assumed to be a complete historical quote archive.
 
