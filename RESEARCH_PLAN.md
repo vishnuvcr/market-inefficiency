@@ -40,22 +40,30 @@ Subphases:
 - 0.5 GitHub Actions CI and research-health checks.
 - 0.6 Research decision log.
 
+**Status:** 90% — scaffold complete; final CI verification remains.
+
 **Exit gate:** protocol, configuration, validator, and status system pass automated checks.
 
 ### Phase 1 — Literature and source validation
 **Goal:** convert the uploaded protocol into a verified evidence base.
 
-Subphases:
-- 1.1 Validate foundational theory sources.
-- 1.2 Validate Indian-market empirical sources.
-- 1.3 Validate the methodology references for Hurst/MFDFA, CPCV, DSR, PBO, SABR, MJD, and execution modelling.
-- 1.4 Record source quality, publication date, population, geography, and direct relevance.
-- 1.5 Mark unsupported claims as hypotheses rather than facts.
+**Status:** 45% — foundational theory/methodology and primary-source locations verified; exact current SEBI statistic extraction and claim-level mapping remain.
 
-**Exit gate:** every externally asserted empirical claim used by the code or report has a traceable source entry.
+Subphases:
+- 1.1 Validate foundational theory sources — **substantially complete**.
+- 1.2 Validate Indian-market empirical sources — **primary FY25–FY26 SEBI reports located; exact extraction pending**.
+- 1.3 Validate methodology references for Hurst/MFDFA, CPCV, DSR, PBO, SABR, MJD, and execution modelling — **substantially complete**.
+- 1.4 Record source quality, publication date, population, geography, and direct relevance — **in progress via `docs/LITERATURE_MATRIX.md`**.
+- 1.5 Mark unsupported claims as hypotheses rather than facts — **complete for current protocol registry**.
+
+**Phase 1 methodological decision:** Hurst exponent is a candidate feature, not a standalone inefficiency classifier. H != 0.5 must be evaluated against estimator uncertainty and surrogate/random-walk controls.
+
+**Phase 1 exit gate:** every externally asserted empirical claim used by the code or report has a traceable source entry.
 
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
+
+Status: 0% — blocked until Phase 1 source/data requirements are frozen.
 
 Subphases:
 - 2.1 Underlying OHLCV and corporate-action handling.
@@ -71,95 +79,37 @@ Subphases:
 ### Phase 3 — Stylized facts and inefficiency discovery
 **Goal:** determine whether the market characteristics assumed by the protocol are actually present in the chosen universe.
 
-Subphases:
-- 3.1 Return distribution: skewness, kurtosis, tail index, jumps.
-- 3.2 Volatility smile/skew and term structure.
-- 3.3 Realized volatility estimators comparison.
-- 3.4 Hurst/MFDFA robustness checks.
-- 3.5 VRP measurement across horizons and moneyness.
-- 3.6 Jump intensity and jump-size estimation.
-- 3.7 Surface parameter stability.
-
-**Exit gate:** each research track receives an empirical baseline report before any strategy optimization.
+Status: 0%.
 
 ### Phase 4 — Single-hypothesis model research
 **Goal:** test each mechanism independently before combining them.
 
-Subphases:
-- 4.1 VRP signal definitions and economic interpretation.
-- 4.2 Jump-risk premium definitions and tail structures.
-- 4.3 SABR calibration and surface-relative-value signals.
-- 4.4 Hurst/regime features and complementary regime variables.
-- 4.5 Pre-registered parameter grids and ablation design.
-
-**Exit gate:** no track may enter ensemble research unless its independent validation record is complete.
+Status: 0%.
 
 ### Phase 5 — Multimodal regime switching
 **Goal:** determine whether a regime model adds information beyond single features.
 
-Subphases:
-- 5.1 Feature availability and timestamp alignment audit.
-- 5.2 Unsupervised state discovery.
-- 5.3 HMM/GMM stability analysis.
-- 5.4 State interpretability and persistence checks.
-- 5.5 Out-of-sample regime classification.
-- 5.6 Conditional strategy-performance analysis.
-
-**Exit gate:** incremental value must be demonstrated out of sample and under feature ablation.
+Status: 0%.
 
 ### Phase 6 — Portfolio construction and execution realism
 **Goal:** convert individual effects into implementable portfolios.
 
-Subphases:
-- 6.1 Position sizing and risk budgets.
-- 6.2 Delta/gamma/vega/theta exposure accounting.
-- 6.3 Correlation-aware allocation.
-- 6.4 Transaction-cost model.
-- 6.5 Bid/ask and liquidity filters.
-- 6.6 Latency and order-fill simulation.
-- 6.7 Impact-aware execution.
-- 6.8 Margin/capital usage.
-
-**Exit gate:** all headline results are available both gross and net of costs.
+Status: 0%.
 
 ### Phase 7 — Statistical validation and anti-overfitting controls
 **Goal:** establish whether any observed edge survives scientific scrutiny.
 
-Subphases:
-- 7.1 Purged walk-forward tests.
-- 7.2 CPCV path generation.
-- 7.3 DSR.
-- 7.4 PBO.
-- 7.5 Multiple-testing ledger / effective trial count.
-- 7.6 Parameter perturbation and stability tests.
-- 7.7 Regime and period stress tests.
-- 7.8 Final untouched holdout.
-
-**Exit gate:** only models passing all mandatory statistical gates may progress to paper trading.
+Status: 0%.
 
 ### Phase 8 — Paper-trading validation
 **Goal:** compare research assumptions with live market behavior without capital risk.
 
-Subphases:
-- 8.1 Signal publication pipeline.
-- 8.2 Intended versus executable prices.
-- 8.3 Fill-quality measurement.
-- 8.4 Slippage model calibration.
-- 8.5 Operational failure monitoring.
-- 8.6 Live-vs-simulated attribution.
-
-**Exit gate:** paper-trading results must be consistent with research expectations before any capital deployment is considered.
+Status: 0%.
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
 
-Subphases:
-- 9.1 Drift monitoring.
-- 9.2 Regime-frequency monitoring.
-- 9.3 Data-quality monitoring.
-- 9.4 Scheduled re-validation.
-- 9.5 Model retirement criteria.
-- 9.6 Reproducibility archive.
+Status: 0%.
 
 ## Mandatory experiment lifecycle
 
