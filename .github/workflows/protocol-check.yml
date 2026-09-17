@@ -33,6 +33,9 @@ jobs:
       - name: Test NSE F&O EOD normalization adapter
         run: python scripts/test_nse_fo_eod_adapter.py
 
+      - name: Test Kaggle NIFTY normalization adapter
+        run: python scripts/test_kaggle_nifty_adapter.py
+
       - name: Test Phase 2 quality and contract reconciliation
         run: python scripts/test_phase2_quality_and_contracts.py
 
@@ -51,3 +54,4 @@ jobs:
             docs/HYPOTHESES.md
             docs/VALIDATION_FRAMEWORK.md
             docs/DATA_SPECIFICATION.md
+            docs/KAGGLE_DATA_SOURCES.md
