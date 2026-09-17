@@ -10,7 +10,9 @@ Last reviewed: 2026-09-18
 
 **Primary use in this project:** underlying NIFTY index OHLC data and India VIX context for Phase 2 validation and Phase 3 stylized-fact research.
 
-Kaggle describes the dataset as containing NIFTY indices at multiple frequencies, including NIFTY 50 and India VIX minute data. The dataset page states that the files contain OHLC and datetime information and that the NIFTY index files do not contain volume. The published page also states that the uploader collected the data from internet/Google Drive sources and that it is provided for research purposes. Therefore provenance is recorded as Kaggle/uploader-provided rather than as a direct NSE archival feed. citeturn2search1turn5search0
+Kaggle describes the dataset as containing NIFTY indices at multiple frequencies, including NIFTY 50 and India VIX minute data. The dataset page states that the files contain OHLC and datetime information and that the NIFTY index files do not contain volume. The publisher also states that the files were collected from internet/Google Drive sources and are provided for research purposes. Therefore provenance is recorded as Kaggle/uploader-provided rather than as a direct NSE archival feed.
+
+Kaggle source page: https://www.kaggle.com/datasets/debashis74017/nifty-50-minute-data
 
 ## Research classification
 
@@ -33,7 +35,7 @@ For **executable trading backtests**, a Kaggle snapshot must not be assumed to r
 
 The Kaggle NIFTY index dataset does not solve the project's historical option bid/ask/depth requirement. A separate option dataset must still be validated before Track A (VRP), Track C (SABR/surface) or Track G (microstructure) can be promoted to executable research.
 
-A separate Kaggle F&O dataset may be used as an exploratory EOD source if its fields, provenance, contract identity, and licensing are independently validated; it cannot be assumed to contain reliable historical bid/ask/depth. Public Kaggle discussions also indicate that shared F&O datasets may lack bid/ask data. citeturn0search0turn2search4
+A separate Kaggle F&O dataset may be used as an exploratory EOD source if its fields, provenance, contract identity, and licensing are independently validated; it cannot be assumed to contain reliable historical bid/ask/depth. Public Kaggle discussions also indicate that shared F&O datasets may lack bid/ask data.
 
 ## Required local snapshot procedure
 
