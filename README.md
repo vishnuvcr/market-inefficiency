@@ -15,6 +15,8 @@ This repository separates **hypothesis generation**, **empirical testing**, **st
 - [Data Specification](docs/DATA_SPECIFICATION.md)
 - [Validation Framework](docs/VALIDATION_FRAMEWORK.md)
 - [Source Audit](docs/SOURCE_AUDIT.md)
+- [Data Source Registry](docs/DATA_SOURCE_REGISTRY.md)
+- [Kaggle Data Sources](docs/KAGGLE_DATA_SOURCES.md)
 - [Experiment Registry](docs/EXPERIMENT_REGISTRY.md)
 - [Protocol Configuration](config/research_config.json)
 
@@ -38,9 +40,9 @@ H — Integrated Research Portfolio
 
 ## Current status
 
-**Phase 2 — Data engineering and market representation — IN PROGRESS (~45%)**
+**Phase 2 — Data engineering and market representation — IN PROGRESS (~55%)**
 
-Phase 0 governance and Phase 1 source validation are complete. The Phase 2 schema/PIT controls, synthetic validation, adapter interfaces and first NSE F&O EOD normalization path are implemented. Real-source acceptance remains gated on quality, contract-history, availability-time and immutable-snapshot checks.
+Phase 0 governance and Phase 1 source validation are complete. Phase 2 schema/PIT controls, synthetic validation, adapter interfaces, NSE F&O EOD normalization, Kaggle NIFTY/India VIX normalization, quality/exclusion tooling and immutable snapshot tooling are implemented. The Kaggle source is classified as a third-party research snapshot suitable for descriptive/stylized-fact work; it is not yet DATA-READY because the exact external snapshot bytes still require local acquisition, hashing and validation. Historical option quote/depth and execution research remains gated on an appropriate source.
 
 ## Evidence policy
 
