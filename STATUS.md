@@ -8,7 +8,7 @@ Last updated: 2026-09-18
 
 Status: **IN PROGRESS**
 
-Overall completion: **~40% of Phase 2**
+Overall completion: **~45% of Phase 2**
 
 ## Phase tracker
 
@@ -16,7 +16,7 @@ Overall completion: **~40% of Phase 2**
 |---|---|---:|---|
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI on current protocol scaffold |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed; source registry and claim mapping complete |
-| 2. Data engineering | 🟡 In progress | 40% | Real-source ingestion + data-quality acceptance |
+| 2. Data engineering | 🟡 In progress | 45% | Real-source sample + data-quality acceptance |
 | 3. Stylized facts | ⚪ Not started | 0% | Produce baseline market diagnostics |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Run independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Build leakage-safe regime dataset |
@@ -28,14 +28,15 @@ Overall completion: **~40% of Phase 2**
 ## Latest Phase 2 work
 
 - Added `docs/DATA_ADAPTERS.md` defining stable interfaces for NSE cash/EOD, derivatives EOD, contract master, India VIX, RBI rates and licensed quote/trade sources.
-- Added a synthetic fixture at `tests/fixtures/phase2_minimal.json` without restricted market data.
-- Added `scripts/validate_phase2_fixture.py` for deterministic chronology, point-in-time, OHLC hygiene and key-uniqueness checks.
-- Added the synthetic fixture check to GitHub Actions.
-- Synchronized `RESEARCH_PLAN.md` with the actual Phase 2 implementation state.
+- Implemented `scripts/ingest_nse_fo_eod.py` for bounded NSE F&O EOD CSV normalization with explicit point-in-time availability and provenance hashing.
+- Added `tests/fixtures/nse_fo_eod_sample.csv` and deterministic adapter tests.
+- Added the NSE adapter test to GitHub Actions.
+- Added a synthetic Phase 2 fixture and deterministic chronology, PIT, OHLC and key-uniqueness checks.
+- Corrected the contract-master validator rule so effective-dated metadata uses `effective_from/effective_to` plus `available_at`, rather than an observation timestamp.
 
 ## Phase 2 remains data-gated
 
-Interface completion is not equivalent to market-data readiness. Real NSE/RBI ingestion, corporate-action reconciliation, contract-history reconciliation, representative historical option-quote validation, and immutable production snapshot creation remain outstanding.
+The normalization path is implemented, but no real NSE dataset is yet declared `DATA-READY`. Real-source ingestion, corporate-action reconciliation, contract-history reconciliation, representative historical option-quote validation, and immutable production snapshot creation remain outstanding.
 
 ## Decision log additions
 
@@ -48,9 +49,12 @@ Interface completion is not equivalent to market-data readiness. Real NSE/RBI in
 ### D2.7 — No inferred quotes
 **Decision:** Last traded price, volume or open interest may not be used to manufacture historical bid/ask/depth observations.
 
+### D2.8 — Explicit availability timestamps
+**Decision:** Historical source availability is never inferred from trade date. The adapter requires an explicit `available_at` value so point-in-time reconstruction cannot silently assume publication timing.
+
 ## Immediate next tasks
 
-1. Implement the first public-source ingestion adapter and normalization path.
+1. Validate the NSE F&O adapter against a representative real historical sample.
 2. Implement dataset-quality diagnostics with exclusion reason codes.
 3. Implement contract-master as-of joins and reconciliation tests.
 4. Implement immutable snapshot manifest/hash generation.
