@@ -1,0 +1,67 @@
+{
+  "schema_version": "1.0",
+  "timezone": "Asia/Kolkata",
+  "timestamp_policy": {
+    "storage": "UTC",
+    "source_timezone": "Asia/Kolkata",
+    "required_fields": ["timestamp", "available_at"],
+    "available_at_rule": "A record or metadata attribute may be used only if available_at <= decision_timestamp."
+  },
+  "layers": {
+    "underlying_eod": {
+      "grain": "instrument_id + session_date",
+      "required": ["timestamp", "available_at", "instrument_id", "open", "high", "low", "close", "volume", "session_id"],
+      "optional": ["adjusted_close", "corporate_action_id"],
+      "units": {"price": "native_currency_per_unit", "volume": "shares_or_contract_units"},
+      "key": ["instrument_id", "timestamp"]
+    },
+    "option_eod": {
+      "grain": "contract_id + session_date",
+      "required": ["timestamp", "available_at", "underlying_id", "expiry", "strike", "option_type", "open", "high", "low", "close", "last_price", "volume", "open_interest", "settlement", "lot_size"],
+      "quote_fields": ["bid", "ask", "mid", "bid_size", "ask_size"],
+      "key": ["underlying_id", "expiry", "strike", "option_type", "timestamp"],
+      "option_type_values": ["CE", "PE"],
+      "hygiene": ["price_non_negative", "bid_le_ask_when_both_present", "mid_between_bid_ask_when_all_present", "valid_expiry", "valid_strike", "valid_listing_interval"]
+    },
+    "contract_master": {
+      "grain": "contract_id + effective_interval",
+      "required": ["contract_id", "underlying_id", "expiry", "strike", "option_type", "lot_size", "effective_from", "effective_to", "available_at"],
+      "key": ["contract_id", "effective_from"],
+      "hygiene": ["non_overlapping_effective_intervals", "positive_lot_size", "option_type_valid"]
+    },
+    "india_vix": {
+      "grain": "session_date",
+      "required": ["timestamp", "available_at", "close"],
+      "key": ["timestamp"],
+      "units": {"close": "percent_volatility_index_points"}
+    },
+    "risk_free": {
+      "grain": "observation_date + tenor",
+      "required": ["timestamp", "available_at", "tenor", "rate"],
+      "key": ["timestamp", "tenor"],
+      "units": {"rate": "decimal_annualized"}
+    },
+    "intraday_quotes_trades": {
+      "grain": "event_timestamp + instrument_id + event_sequence",
+      "required": ["timestamp", "available_at", "instrument_id", "event_sequence"],
+      "quotes": ["bid", "ask", "bid_size", "ask_size"],
+      "trades": ["trade_price", "trade_size", "trade_id"],
+      "key": ["instrument_id", "timestamp", "event_sequence"],
+      "hygiene": ["bid_le_ask_when_both_present", "positive_sizes_when_present", "non_negative_prices"]
+    }
+  },
+  "global_quality_rules": {
+    "reject_negative_prices": true,
+    "reject_crossed_quotes": true,
+    "flag_stale_quotes": true,
+    "detect_duplicates": true,
+    "require_contract_metadata": true,
+    "require_point_in_time_available_at": true,
+    "preserve_raw_source": true,
+    "record_excluded_observations": true
+  },
+  "snapshot_manifest": {
+    "required": ["dataset_id", "snapshot_created_at", "source", "source_version", "preprocessing_version", "code_commit", "sha256", "row_count"],
+    "immutable_dataset_id": true
+  }
+}
