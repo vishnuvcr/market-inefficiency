@@ -47,23 +47,24 @@ Subphases:
 ### Phase 1 — Literature and source validation
 **Goal:** convert the uploaded protocol into a verified evidence base.
 
-**Status:** 45% — foundational theory/methodology and primary-source locations verified; exact current SEBI statistic extraction and claim-level mapping remain.
+**Status:** 80% — primary SEBI claim-level extraction is complete; final source-ID mapping and CI verification remain.
 
 Subphases:
 - 1.1 Validate foundational theory sources — **substantially complete**.
-- 1.2 Validate Indian-market empirical sources — **primary FY25–FY26 SEBI reports located; exact extraction pending**.
+- 1.2 Validate Indian-market empirical sources — **claim-level FY25–FY26 SEBI registry complete**.
 - 1.3 Validate methodology references for Hurst/MFDFA, CPCV, DSR, PBO, SABR, MJD, and execution modelling — **substantially complete**.
-- 1.4 Record source quality, publication date, population, geography, and direct relevance — **in progress via `docs/LITERATURE_MATRIX.md`**.
+- 1.4 Record source quality, publication date, population, geography, and direct relevance — **substantially complete via `docs/LITERATURE_MATRIX.md` and `docs/SOURCES_SEBI_FY25_FY26.md`**.
 - 1.5 Mark unsupported claims as hypotheses rather than facts — **complete for current protocol registry**.
+- 1.6 Map source IDs to hypotheses/experiments and perform exit review — **in progress**.
 
 **Phase 1 methodological decision:** Hurst exponent is a candidate feature, not a standalone inefficiency classifier. H != 0.5 must be evaluated against estimator uncertainty and surrogate/random-walk controls.
 
-**Phase 1 exit gate:** every externally asserted empirical claim used by the code or report has a traceable source entry.
+**Phase 1 exit gate:** every externally asserted empirical claim used by the code or report has a traceable source entry; primary claims have population/period/definition metadata; CI validates the repository structure.
 
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
 
-Status: 0% — blocked until Phase 1 source/data requirements are frozen.
+Status: 0% — starts only after Phase 1 sign-off.
 
 Subphases:
 - 2.1 Underlying OHLCV and corporate-action handling.
@@ -73,6 +74,8 @@ Subphases:
 - 2.5 Intraday data where required for realized volatility and execution studies.
 - 2.6 Data quality tests: missingness, stale quotes, crossed markets, zero/negative prices, timestamp ordering, duplicate contracts.
 - 2.7 Immutable dataset snapshots and hashes.
+
+**SEBI-informed Phase 2 priorities:** expiry distance, option buy/sell classification, transaction-cost fields, capital/portfolio segmentation and trader/contract activity measures must be retained where data availability permits, because the current SEBI evidence shows these dimensions materially differentiate observed outcomes.
 
 **Exit gate:** a point-in-time data slice can be reconstructed exactly from a version identifier.
 
