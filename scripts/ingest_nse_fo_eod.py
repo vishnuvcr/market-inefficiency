@@ -32,6 +32,7 @@ ALIASES = {
     "oi": ["Open Int", "Open Interest", "Open Interest(OI)", "OI", "OPEN_INT"],
     "change_oi": ["Change in OI", "Change OI", "CHANGE_IN_OI"],
     "underlying_value": ["Underlying Value", "UNDERLYING_VALUE"],
+    "lot_size": ["Lot Size", "LOT_SIZE", "Contract Multiplier", "CONTRACT_MULTIPLIER"],
 }
 
 REQUIRED = ["symbol", "trade_date", "expiry", "strike", "open", "high", "low", "close", "volume", "oi"]
@@ -121,12 +122,13 @@ def main() -> int:
                 "high": parse_number(row[mapping["high"]]),
                 "low": parse_number(row[mapping["low"]]),
                 "close": parse_number(row[mapping["close"]]),
+                "last_price": parse_number(row[mapping["ltp"]]) if "ltp" in mapping else None,
                 "settlement": parse_number(row[mapping["settlement"]]) if "settlement" in mapping else None,
-                "ltp": parse_number(row[mapping["ltp"]]) if "ltp" in mapping else None,
                 "volume": parse_number(row[mapping["volume"]]),
                 "open_interest": parse_number(row[mapping["oi"]]),
                 "change_in_oi": parse_number(row[mapping["change_oi"]]) if "change_oi" in mapping else None,
                 "underlying_value": parse_number(row[mapping["underlying_value"]]) if "underlying_value" in mapping else None,
+                "lot_size": parse_number(row[mapping["lot_size"]]) if "lot_size" in mapping else None,
                 "contract_type": contract_type,
                 "source_id": "DS-NSE-FO-EOD",
                 "source_row": row_no,
@@ -149,11 +151,14 @@ def main() -> int:
         "available_at": available_at,
         "row_count": len(records),
         "records": records,
+        "enrichment_required": ["contract_master_asof_join"] if any(r["lot_size"] is None for r in records) else [],
     }
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_text(json.dumps(output, indent=2) + "\n", encoding="utf-8")
     print(f"Normalized {len(records)} rows -> {args.output}")
     print(f"Immutable dataset_id: {output['dataset_id']}")
+    if output["enrichment_required"]:
+        print("Contract metadata enrichment required before DATA-READY promotion")
     return 0
 
 
