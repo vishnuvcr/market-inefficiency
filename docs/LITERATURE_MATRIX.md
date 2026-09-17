@@ -4,7 +4,7 @@ Last reviewed: 2026-09-18
 
 ## Purpose
 
-This document records the first external evidence audit for the research protocol. It distinguishes established methodological/theoretical sources from empirical claims that still require testing in Indian derivatives data.
+This document records the external evidence audit for the research protocol. It distinguishes established methodological/theoretical sources from empirical claims that still require testing in Indian derivatives data.
 
 | Area | Source | Evidence role | Repository treatment | Status |
 |---|---|---|---|---|
@@ -17,7 +17,7 @@ This document records the first external evidence audit for the research protoco
 | Yang-Zhang volatility | Yang & Zhang (2000) | OHLC volatility-estimation methodology | Candidate estimator; compare with Parkinson/Garman-Klass | VERIFIED METHODOLOGY |
 | PBO | Bailey et al. | Backtest-overfitting methodology | Required anti-overfitting component | VERIFIED METHODOLOGY |
 | DSR | Bailey & López de Prado (2014) | Selection-adjusted Sharpe inference | Required multiple-testing control | VERIFIED METHODOLOGY |
-| Indian retail derivatives outcomes | SEBI FY25-FY26 studies, 20 Aug 2026 | Current primary Indian-market evidence | Use primary SEBI documents; do not substitute secondary summaries | PRIMARY SOURCE LOCATED |
+| Indian retail derivatives outcomes | SEBI FY25-FY26 studies, 20 Aug 2026 | Current primary Indian-market evidence | Use claim-level registry `docs/SOURCES_SEBI_FY25_FY26.md` | VERIFIED PRIMARY EVIDENCE |
 
 ## Key findings from Phase 1
 
@@ -27,7 +27,7 @@ Lo's AMH provides a framework in which market efficiency can vary with competiti
 
 ### 2. India VIX
 
-NSE states that India VIX is derived from NIFTY option bid/ask information and represents expected volatility over the next 30 calendar days. The methodology uses out-of-the-money NIFTY options and a forward-index procedure. This makes India VIX a suitable contextual variable for Track A, but it must not be confused with realized volatility. 
+NSE states that India VIX is derived from NIFTY option bid/ask information and represents expected volatility over the next 30 calendar days. The methodology uses out-of-the-money NIFTY options and a forward-index procedure. This makes India VIX a suitable contextual variable for Track A, but it must not be confused with realized volatility.
 
 ### 3. Hurst exponent — important protocol correction
 
@@ -41,9 +41,27 @@ The DSR literature explicitly addresses performance inflation caused by selectio
 
 Yang & Zhang's estimator is designed to use open, high, low and close prices while accounting for drift and opening jumps. The research will reproduce it alongside Parkinson and Garman-Klass instead of assuming the protocol's preferred estimator is universally optimal.
 
-### 6. Current Indian derivatives evidence
+### 6. Current Indian derivatives evidence — claim-level extraction
 
-SEBI's official research pages confirm that the FY25-FY26 studies on trading behaviour and profitability were published on 20 August 2026. Exact statistics used in the research will be extracted from the primary reports and stored with period, population and definition metadata. Secondary articles will not be used as the authoritative numerical source.
+The two official SEBI FY25–FY26 studies were published on 20 August 2026. The repository now records their key statistics and provenance in `docs/SOURCES_SEBI_FY25_FY26.md`.
+
+The extracted evidence includes participation, profitability, transaction-cost, expiry-concentration, portfolio-size and trading-behaviour findings. Important denominator distinctions are preserved: for example, 87.7% is the FY26 loss-maker share for the relevant individual-trader population, while approximately 85% refers to loss-making trader-quarter observations in the trading-behaviour study. These are not interchangeable statistics.
+
+SEBI's official press release states that the profitability study uses data from the top 15 brokers, representing approximately 90% of individual investors in the segment, while the trading-behaviour study is primarily based on a random sample of 5,000 individual traders plus the profitability sample. These population distinctions will be carried into future analysis.
+
+### 7. Research implication of the SEBI evidence
+
+The SEBI findings justify making the following data dimensions first-class research variables rather than assuming a homogeneous retail population:
+
+- options versus futures;
+- option-buying versus option-selling classification where data permit;
+- trading intensity relative to capital/equity portfolio;
+- distance to expiry, especially 0DTE/1DTE/7DTE;
+- transaction-cost burden including statutory charges;
+- equity-portfolio-size strata;
+- participation persistence and trader-quarter outcomes.
+
+These observations are **context and segmentation inputs**, not evidence that any repository strategy will generate positive net expectancy.
 
 ## Phase 1 source hierarchy
 
@@ -56,6 +74,7 @@ SEBI's official research pages confirm that the FY25-FY26 studies on trading beh
 
 - SEBI — Study: Trading Behaviour of Individual Traders in the Equity Derivatives Segment (FY25-FY26), 20 Aug 2026.
 - SEBI — Study: Profitability of Individual Traders in the Equity Derivatives Segment (FY25-FY26), 20 Aug 2026.
+- SEBI — PR No.50/2026, 20 Aug 2026.
 - NSE — India VIX methodology and index description.
 - Lo, A.W. — The Adaptive Markets Hypothesis: Market Efficiency from an Evolutionary Perspective.
 - Merton, R.C. (1976) — Option Pricing When Underlying Stock Returns Are Discontinuous.
@@ -68,10 +87,10 @@ SEBI's official research pages confirm that the FY25-FY26 studies on trading beh
 
 ## Phase 1 conclusion
 
-The literature supports the **research mechanisms and validation methodology**, but does not establish that any specific Indian-market implementation has positive net expectancy. The strongest methodological change resulting from this audit is the downgrade of the Hurst exponent from a direct inefficiency classifier to a candidate feature requiring robust controls.
+The literature supports the **research mechanisms and validation methodology**, while the current SEBI evidence supplies market-participation, outcome and cost context. Neither body of evidence establishes that any specific Indian-market implementation has positive net expectancy. The strongest methodological change resulting from this audit is the downgrade of the Hurst exponent from a direct inefficiency classifier to a candidate feature requiring robust controls.
 
 ## Phase 1 gate status
 
-**PARTIALLY PASSED.**
+**SUBSTANTIALLY PASSED — EXIT REVIEW PENDING.**
 
-Foundational methodology and current primary Indian regulatory sources have been identified. Exact extraction of the FY25-FY26 SEBI statistics and full source-by-source claim mapping remain before Phase 1 can be marked complete.
+Foundational methodology and current primary Indian regulatory sources have been identified and the principal FY25–FY26 SEBI statistics are now stored at claim level. Remaining work before formal Phase 1 closure is source-ID mapping into hypothesis/experiment records, final claim-matrix review, and GitHub Actions verification.
