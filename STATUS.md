@@ -8,13 +8,13 @@ Last updated: 2026-09-18
 
 Status: **IN PROGRESS**
 
-Overall completion: **~25% of Phase 0**
+Overall completion: **~70% of Phase 0**
 
 ## Phase tracker
 
 | Phase | Status | Completion | Current gate |
 |---|---|---:|---|
-| 0. Governance & infrastructure | 🟡 In progress | 25% | Complete protocol scaffold + automated validation |
+| 0. Governance & infrastructure | 🟡 In progress | 70% | Run/verify GitHub Actions and open draft PR |
 | 1. Literature/source validation | ⚪ Not started | 0% | Build source audit |
 | 2. Data engineering | ⚪ Not started | 0% | Define and ingest versioned data |
 | 3. Stylized facts | ⚪ Not started | 0% | Produce baseline market diagnostics |
@@ -27,20 +27,24 @@ Overall completion: **~25% of Phase 0**
 
 ## Completed in this response
 
-- Confirmed the GitHub repository exists and is currently empty apart from the bootstrap commit.
+- Confirmed the GitHub repository is under `vishnuvcr/market-inefficiency` with `main` as the default branch.
 - Created branch `research/v1.0-protocol`.
-- Added the master research plan with 10 phases (0–9), subphases, gates, and promotion states.
-- Defined the research tracks: VRP, jump-risk, SABR surface, Hurst/MFDFA, multimodal HMM/GMM, ensemble allocation, execution, and integrated portfolio.
-- Established the principle that the uploaded protocol is a hypothesis-generation source, not empirical proof.
-- Added the initial GitHub research architecture; automated checks are the next infrastructure task.
+- Added the master research plan with 10 phases (0–9), subphases, gates, deliverables, and promotion states.
+- Added a research charter defining evidence, leakage, reproducibility, and deployment rules.
+- Added a hypothesis registry covering VRP, jump risk, SABR surface, efficiency regimes, multimodal regime allocation, portfolio, execution, and integrated validation.
+- Added point-in-time data specifications and cost-model requirements.
+- Added the validation framework covering purging, embargo, CPCV, DSR, PBO, multiple-testing accounting, parameter stability, stress tests, and an untouched holdout.
+- Added a source-audit framework and flagged empirical claims for independent verification.
+- Added the experiment registry and machine-readable research configuration.
+- Added `scripts/validate_protocol.py` and the first GitHub Actions protocol-check workflow.
+- Updated the repository README with navigation to the research controls.
 
 ## Immediate next tasks
 
-1. Add research charter and hypothesis registry.
-2. Add source-audit registry, including verification of current SEBI material.
-3. Add data specification and configuration.
-4. Add protocol validator and GitHub Actions CI.
-5. Open a draft pull request containing the Phase 0 research scaffold.
+1. Trigger and verify the GitHub Actions workflow through the draft PR.
+2. Create the master GitHub issue linking the phase plan and research decisions.
+3. Complete Phase 1 source verification with primary/academic references.
+4. Begin Phase 2 data-source and data-schema implementation.
 
 ## Decision log
 
@@ -54,3 +58,6 @@ Overall completion: **~25% of Phase 0**
 
 ### D0.3 — Deployment boundary
 **Decision:** No live-trading implementation is permitted before the full statistical and execution validation gates.
+
+### D0.4 — Current-market source refresh
+**Decision:** Current empirical claims about Indian derivatives participation/losses must use the latest primary SEBI reports rather than secondary summaries.
