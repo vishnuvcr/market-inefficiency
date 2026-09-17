@@ -18,15 +18,16 @@ The uploaded research protocol contains a mixture of established theory, empiric
 | DSR threshold >95% | Protocol p.7 | Initial protocol gate; sensitivity analysis required | PROTOCOL RULE, NOT UNIVERSAL LAW |
 | PBO <10% | Protocol p.7 | Initial protocol gate; sensitivity analysis required | PROTOCOL RULE, NOT UNIVERSAL LAW |
 | Almgren-Chriss execution | Protocol p.8 | Candidate execution model; calibrate to available market data | REQUIRES IMPLEMENTATION/CALIBRATION |
-| SEBI retail-trader loss evidence | Protocol pp.8–9 | Use current primary SEBI reports in place of secondary summaries | PRIMARY SOURCES LOCATED; EXACT EXTRACTION PENDING |
+| SEBI retail-trader loss evidence | Protocol pp.8–9 | Use current primary SEBI reports and source registry | VERIFIED CURRENT PRIMARY EVIDENCE |
 
 ## Phase 1 verified external sources
 
 ### Primary regulatory/exchange sources
 
-1. **SEBI — Trading Behaviour of Individual Traders in the Equity Derivatives Segment (FY25–FY26)**, published 20 Aug 2026.
-2. **SEBI — Profitability of Individual Traders in the Equity Derivatives Segment (FY25–FY26)**, published 20 Aug 2026.
-3. **NSE — India VIX index description and computation methodology.** NSE states that India VIX is derived from NIFTY option prices and represents expected volatility over the next 30 calendar days.
+1. **SEBI — Trading Behaviour of Individual Traders in the Equity Derivatives Segment (FY25–FY26)**, published 20 Aug 2026. Claim-level registry: `docs/SOURCES_SEBI_FY25_FY26.md` (S2).
+2. **SEBI — Profitability of Individual Traders in the Equity Derivatives Segment (FY25–FY26)**, published 20 Aug 2026. Claim-level registry: `docs/SOURCES_SEBI_FY25_FY26.md` (S1).
+3. **SEBI PR No.50/2026**, published 20 Aug 2026, summarising the two studies and their study designs. Registry: `docs/SOURCES_SEBI_FY25_FY26.md` (S3).
+4. **NSE — India VIX index description and computation methodology.** NSE states that India VIX is derived from NIFTY option prices and represents expected volatility over the next 30 calendar days.
 
 ### Academic/methodological sources
 
@@ -39,15 +40,24 @@ The uploaded research protocol contains a mixture of established theory, empiric
 - Pernagallo (2025), *Random walks, Hurst exponent, and market efficiency*.
 - Carr & Wu, work on volatility risk and risk premia in option contracts.
 
+## Phase 1 exact SEBI extraction completed
+
+The current primary SEBI evidence has now been extracted into `docs/SOURCES_SEBI_FY25_FY26.md` with source IDs, dates, populations, definitions/caveats and research uses.
+
+Key FY26 observations recorded from the primary SEBI sources include:
+
+- 87.7% of individual traders were loss-making in FY26; the corresponding FY25 figure in the revised comparison is 90.9%.
+- FY26 aggregate net loss was ₹91,685 crore, versus a revised ₹1.12 lakh crore in FY25.
+- Individual transaction costs were about ₹25,000 crore in FY26, and STT paid by individuals rose from ₹4,920 crore in FY25 to ₹6,645 crore in FY26.
+- About 59% of index-options turnover occurred on 0DTE, 75% within 1DTE and 97% within 7DTE in FY26.
+- Nearly 97% of traders predominantly followed option-buying strategies, while around 2% were classified as majorly options sellers in the trading-behaviour study.
+- Higher trading intensity was associated with higher loss rates; this is retained as an association, not a causal claim.
+
+The profitability report also records that gross trading P&L figures are not equivalent to net investable returns, and some population definitions differ by analysis. The repository therefore keeps the exact denominator and definition attached to each claim rather than collapsing them into a single “retail loss rate”.
+
 ## Important methodological correction from Phase 1
 
 The protocol describes Hurst values below/above 0.5 as mean-reverting/persistent regimes. The 2025 Pernagallo study demonstrates that estimated H != 0.5 can arise under random-walk processes and is sensitive to estimator choice. Therefore the repository will **not** treat Hurst >0.5 or Hurst <0.5 as direct evidence of inefficiency. Track D must use estimator comparison, surrogate/random-walk controls, confidence intervals and complementary dependence measures.
-
-## Current Indian-market empirical claims
-
-The latest primary SEBI FY25–FY26 reports have been located. Secondary reports currently reproduce figures such as approximately 87.7% loss-makers in FY26 and aggregate individual net losses around ₹91,685 crore, but these figures will be treated as provisional until extracted directly from the SEBI report and recorded with the exact population, denominator, period and definition.
-
-The earlier official FY25 figure of approximately ₹1,05,603 crore net loss and approximately 91% loss-making individuals remains historical FY25 evidence and must not be silently relabelled as FY25–FY26.
 
 ## Source-quality rule
 
@@ -64,4 +74,4 @@ For any high-impact empirical claim, the repository will store:
 
 ## Phase 1 status
 
-**PARTIALLY VERIFIED.** Foundational theory, methodology and primary source locations are verified. Exact extraction and claim-level mapping of the current SEBI FY25–FY26 reports remains an open Phase 1 task.
+**SUBSTANTIALLY VERIFIED; EXIT REVIEW PENDING.** Foundational theory, methodology and current primary Indian evidence have been source-audited and the major SEBI claims are now recorded at claim level. Remaining Phase 1 work is to map source IDs into hypothesis/experiment records, complete the broader claim matrix, and verify the GitHub Actions gate on the latest branch commit.
