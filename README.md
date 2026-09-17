@@ -38,9 +38,9 @@ H — Integrated Research Portfolio
 
 ## Current status
 
-**Phase 0 — Governance, reproducibility, and GitHub infrastructure — IN PROGRESS**
+**Phase 2 — Data engineering and market representation — IN PROGRESS (~45%)**
 
-The initial protocol scaffold, hypothesis registry, data rules, validation gates, source-audit framework, experiment registry, configuration, and GitHub Actions protocol check are now on `research/v1.0-protocol`.
+Phase 0 governance and Phase 1 source validation are complete. The Phase 2 schema/PIT controls, synthetic validation, adapter interfaces and first NSE F&O EOD normalization path are implemented. Real-source acceptance remains gated on quality, contract-history, availability-time and immutable-snapshot checks.
 
 ## Evidence policy
 
