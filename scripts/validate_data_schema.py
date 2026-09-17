@@ -31,6 +31,12 @@ REQUIRED_GLOBAL_RULES = {
     "record_excluded_observations",
 }
 
+# Most observation layers use `timestamp` as the event/observation time.
+# Contract metadata is interval-based, so `effective_from` is its temporal anchor.
+TEMPORAL_KEYS = {
+    "contract_master": ("effective_from", "available_at"),
+}
+
 
 def main() -> int:
     if not SCHEMA.exists():
@@ -48,11 +54,20 @@ def main() -> int:
         raise SystemExit(f"Missing data layers: {sorted(missing_layers)}")
 
     for name, layer in layers.items():
-        required = layer.get("required", [])
-        if "timestamp" not in required or "available_at" not in required:
-            raise SystemExit(f"Layer {name} lacks timestamp/available_at PIT fields")
+        required = set(layer.get("required", []))
+        temporal_keys = TEMPORAL_KEYS.get(name, ("timestamp", "available_at"))
+        missing_temporal = set(temporal_keys) - required
+        if missing_temporal:
+            raise SystemExit(
+                f"Layer {name} lacks required PIT temporal fields: {sorted(missing_temporal)}"
+            )
         if "key" not in layer or not layer["key"]:
             raise SystemExit(f"Layer {name} lacks a deterministic key")
+
+        # The PIT availability timestamp must never be omitted, regardless of
+        # whether the layer's event time is timestamp- or effective-date-based.
+        if "available_at" not in required:
+            raise SystemExit(f"Layer {name} lacks available_at PIT field")
 
     rules = schema.get("global_quality_rules", {})
     missing_rules = [r for r in REQUIRED_GLOBAL_RULES if rules.get(r) is not True]
@@ -72,7 +87,7 @@ def main() -> int:
     print("Data contract validation: PASS")
     print(f"Schema version: {schema['schema_version']}")
     print(f"Layers detected: {len(layers)}")
-    print("PIT control: timestamp + available_at")
+    print("PIT control: event timestamp/effective date + available_at")
     print("Snapshot control: immutable dataset_id + SHA-256")
     return 0
 
