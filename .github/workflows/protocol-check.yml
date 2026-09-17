@@ -27,6 +27,9 @@ jobs:
       - name: Validate Phase 2 data contract
         run: python scripts/validate_data_schema.py
 
+      - name: Validate Phase 2 synthetic fixture
+        run: python scripts/validate_phase2_fixture.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
