@@ -40,44 +40,47 @@ Subphases:
 - 0.5 GitHub Actions CI and research-health checks.
 - 0.6 Research decision log.
 
-**Status:** 90% — scaffold complete; final CI verification remains.
+**Status:** 100% — exit gate passed on the current scaffold.
 
 **Exit gate:** protocol, configuration, validator, and status system pass automated checks.
 
 ### Phase 1 — Literature and source validation
 **Goal:** convert the uploaded protocol into a verified evidence base.
 
-**Status:** 80% — primary SEBI claim-level extraction is complete; final source-ID mapping and CI verification remain.
+**Status:** 100% — exit gate passed.
 
 Subphases:
-- 1.1 Validate foundational theory sources — **substantially complete**.
-- 1.2 Validate Indian-market empirical sources — **claim-level FY25–FY26 SEBI registry complete**.
-- 1.3 Validate methodology references for Hurst/MFDFA, CPCV, DSR, PBO, SABR, MJD, and execution modelling — **substantially complete**.
-- 1.4 Record source quality, publication date, population, geography, and direct relevance — **substantially complete via `docs/LITERATURE_MATRIX.md` and `docs/SOURCES_SEBI_FY25_FY26.md`**.
+- 1.1 Validate foundational theory sources — **complete**.
+- 1.2 Validate Indian-market empirical sources — **complete with claim-level FY25–FY26 SEBI registry**.
+- 1.3 Validate methodology references for Hurst/MFDFA, CPCV, DSR, PBO, SABR, MJD, and execution modelling — **complete for protocol scope**.
+- 1.4 Record source quality, publication date, population, geography, and direct relevance — **complete for high-impact current claims**.
 - 1.5 Mark unsupported claims as hypotheses rather than facts — **complete for current protocol registry**.
-- 1.6 Map source IDs to hypotheses/experiments and perform exit review — **in progress**.
+- 1.6 Map source IDs to hypotheses/experiments and perform exit review — **complete**.
 
 **Phase 1 methodological decision:** Hurst exponent is a candidate feature, not a standalone inefficiency classifier. H != 0.5 must be evaluated against estimator uncertainty and surrogate/random-walk controls.
 
-**Phase 1 exit gate:** every externally asserted empirical claim used by the code or report has a traceable source entry; primary claims have population/period/definition metadata; CI validates the repository structure.
+**Exit gate:** every high-impact externally asserted empirical claim used by the current code/report has a traceable source entry; primary claims have population/period/definition metadata; CI validates the repository structure.
 
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
 
-Status: 0% — starts only after Phase 1 sign-off.
+**Status: 15% — source audit and field contract complete; acquisition/ingestion not yet complete.**
 
 Subphases:
-- 2.1 Underlying OHLCV and corporate-action handling.
-- 2.2 Full option-chain history with strike, expiry, type, quote time, bid, ask, volume, OI, and underlying reference.
-- 2.3 Contract-specification/version history.
-- 2.4 Risk-free rate and volatility-index inputs.
-- 2.5 Intraday data where required for realized volatility and execution studies.
-- 2.6 Data quality tests: missingness, stale quotes, crossed markets, zero/negative prices, timestamp ordering, duplicate contracts.
-- 2.7 Immutable dataset snapshots and hashes.
+- 2.1 **Source inventory and acquisition plan — complete.** Official NSE and RBI data surfaces have been identified; paid/licensed high-resolution data gaps are explicitly recorded.
+- 2.2 **Underlying OHLCV and corporate-action pipeline — planned.**
+- 2.3 **Full option-chain history — acquisition validation required.** Required fields: timestamp, underlying, expiry, strike, call/put, bid/ask, LTP, volume, OI, quote size/depth, multiplier/lot size and settlement.
+- 2.4 **Contract-specification/version history — planned.** Effective-date joins are mandatory.
+- 2.5 **Risk-free rate and India VIX inputs — source interfaces defined.**
+- 2.6 **Intraday/order-trade data — access decision required.** Needed for execution/microstructure work and potentially for rigorous quote-based option studies.
+- 2.7 **Data-quality and point-in-time tests — planned.** Missingness, stale/crossed quotes, duplicates, invalid prices, timestamp ordering and contract validity.
+- 2.8 **Immutable dataset snapshots and hashes — planned.**
 
-**SEBI-informed Phase 2 priorities:** expiry distance, option buy/sell classification, transaction-cost fields, capital/portfolio segmentation and trader/contract activity measures must be retained where data availability permits, because the current SEBI evidence shows these dimensions materially differentiate observed outcomes.
+**Phase 2 data-availability rule:** public EOD data can support the first layer of descriptive and stylized-fact research, but historical bid/ask/depth coverage must be independently verified before any executable option strategy is backtested. The current option-chain interface is not assumed to be a complete historical quote archive.
 
-**Exit gate:** a point-in-time data slice can be reconstructed exactly from a version identifier.
+**SEBI-informed Phase 2 priorities:** expiry distance, option buy/sell classification, transaction-cost fields, capital/portfolio segmentation and activity measures should be retained where the data source permits.
+
+**Exit gate:** a point-in-time data slice can be reconstructed exactly from a version identifier and all mandatory source/quality checks pass.
 
 ### Phase 3 — Stylized facts and inefficiency discovery
 **Goal:** determine whether the market characteristics assumed by the protocol are actually present in the chosen universe.
