@@ -36,6 +36,9 @@ jobs:
       - name: Test Phase 2 quality and contract reconciliation
         run: python scripts/test_phase2_quality_and_contracts.py
 
+      - name: Test immutable snapshot manifest
+        run: python scripts/test_snapshot_manifest.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
