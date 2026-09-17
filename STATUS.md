@@ -16,7 +16,7 @@ Overall completion: **~55% of Phase 2**
 |---|---|---:|---|
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI on current protocol scaffold |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed; source registry and claim mapping complete |
-| 2. Data engineering | 🟡 In progress | 55% | Real-source sample + data-quality acceptance |
+| 2. Data engineering | 🟡 In progress | 55% | Kaggle snapshot acquisition + real-source quality acceptance |
 | 3. Stylized facts | ⚪ Not started | 0% | Produce baseline market diagnostics |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Run independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Build leakage-safe regime dataset |
@@ -29,20 +29,27 @@ Overall completion: **~55% of Phase 2**
 
 - Added `docs/DATA_ADAPTERS.md` defining stable interfaces for NSE cash/EOD, derivatives EOD, contract master, India VIX, RBI rates and licensed quote/trade sources.
 - Implemented `scripts/ingest_nse_fo_eod.py` for bounded NSE F&O EOD CSV normalization with explicit point-in-time availability and provenance hashing.
-- Added `tests/fixtures/nse_fo_eod_sample.csv` and deterministic adapter tests.
 - Added `scripts/validate_dataset_quality.py` with conservative diagnostics and explicit exclusion reason codes; it never silently repairs bad observations.
 - Added `scripts/reconcile_contract_master.py` for point-in-time contract metadata enrichment using effective dates and metadata availability timestamps.
-- Added synthetic contract-master fixtures and CI coverage for quality diagnostics plus contract reconciliation.
-- Added `scripts/create_snapshot_manifest.py` and deterministic CI coverage for SHA-256/provenance snapshot manifests.
-- Extended GitHub Actions to run the new Phase 2 quality, reconciliation and snapshot tests.
-- Added a synthetic Phase 2 fixture and deterministic chronology, PIT, OHLC and key-uniqueness checks.
-- Corrected the contract-master validator rule so effective-dated metadata uses `effective_from/effective_to` plus `available_at`, rather than an observation timestamp.
+- Added `scripts/create_snapshot_manifest.py` for deterministic SHA-256/provenance snapshot manifests.
+- Added Kaggle source policy in `docs/KAGGLE_DATA_SOURCES.md` and registered `DS-KAGGLE-NIFTY` for NIFTY index and India VIX descriptive/stylized-fact research.
+- Added `scripts/ingest_kaggle_nifty.py` with explicit Kaggle version, acquisition timestamp, snapshot hash and conservative research classification.
+- Added a synthetic Kaggle-format fixture and CI adapter test.
+- Extended GitHub Actions to validate the Kaggle adapter in addition to the existing Phase 2 tests.
+
+## Kaggle data decision
+
+The project will use Kaggle as the first external research-data source for the underlying NIFTY index and India VIX layers. The adopted source is `debashis74017/nifty-50-minute-data` (`NSE - Nifty 50 Index Minute data (2015 to 2026)`).
+
+Kaggle data are classified as a **third-party research snapshot**, not as a direct NSE archival feed. They can support descriptive/stylized-fact analysis after local hash, schema, chronology and quality validation. They do not establish historical exchange publication timing, historical option bid/ask/depth, or a valid execution model.
+
+The raw Kaggle files will not be committed to this public repository. The exact dataset version, acquisition timestamp, SHA-256 hashes and processing commit must be recorded in the snapshot manifest.
 
 ## Phase 2 remains data-gated
 
-The research tooling is materially further along, but no real NSE dataset is yet declared `DATA-READY`. Real-source ingestion, corporate-action reconciliation, contract-history reconciliation against representative real data, historical option-quote validation, and an immutable production snapshot remain outstanding.
+No real Kaggle/NSE dataset is yet declared `DATA-READY` because the actual source bytes have not been validated in the research runtime. Synthetic CI tests demonstrate the mechanics only; they are not evidence about market behavior.
 
-Synthetic CI tests demonstrate the mechanics only; they are not evidence about market behavior.
+The full derivatives research gate also remains open because historical option bid/ask/depth data are still not established.
 
 ## Decision log additions
 
@@ -67,11 +74,14 @@ Synthetic CI tests demonstrate the mechanics only; they are not evidence about m
 ### D2.11 — Immutable snapshot manifest
 **Decision:** Every acquired research snapshot must have a manifest containing source/version, preprocessing version, code commit, SHA-256 and row count when determinable. Restricted datasets can remain outside the public repository while retaining reproducibility metadata.
 
+### D2.12 — Kaggle research-source boundary
+**Decision:** Kaggle is accepted as a practical external source for underlying/index and India-VIX descriptive research after validation. It is not treated as proof of original historical information availability and cannot satisfy the option quote/depth execution-data requirement by itself.
+
 ## Immediate next tasks
 
-1. Validate the NSE F&O adapter against a representative real historical sample.
-2. Run the quality/exclusion report on that real sample and inspect every exclusion class.
-3. Reconcile real observations against the contract master as-of the research decision timestamp.
-4. Create the first immutable real-data snapshot manifest.
-5. Validate a representative historical option quote sample and make the licensed-data decision.
-6. Only after the data gate passes, begin Phase 3 stylized-fact diagnostics.
+1. Acquire the exact Kaggle dataset version locally.
+2. Hash the source files and run `scripts/ingest_kaggle_nifty.py`.
+3. Run the quality/exclusion diagnostics and inspect every exclusion class.
+4. Create the first immutable Kaggle snapshot manifest.
+5. Use the validated NIFTY/VIX snapshot to start Phase 3 descriptive/stylized-fact diagnostics for the underlying/context layer.
+6. In parallel, validate a representative historical option EOD/quote sample and make the licensed-data decision for Tracks A–C/G.
