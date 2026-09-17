@@ -4,19 +4,19 @@ Last updated: 2026-09-18
 
 ## Overall phase
 
-**Phase 1 — Literature and source validation**
+**Phase 2 — Data engineering and market representation**
 
-Status: **IN PROGRESS — EXIT REVIEW**
+Status: **IN PROGRESS**
 
-Overall completion: **~80% of Phase 1**
+Overall completion: **~15% of Phase 2**
 
 ## Phase tracker
 
 | Phase | Status | Completion | Current gate |
 |---|---|---:|---|
-| 0. Governance & infrastructure | 🟢 Scaffold complete | 90% | Final CI verification before merge |
-| 1. Literature/source validation | 🟢 Exit review | 80% | Source-ID mapping + CI verification |
-| 2. Data engineering | ⚪ Not started | 0% | Freeze data specification after Phase 1 sign-off |
+| 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI on current protocol scaffold |
+| 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed; source registry and claim mapping complete |
+| 2. Data engineering | 🟡 In progress | 15% | Source acquisition + schema acceptance |
 | 3. Stylized facts | ⚪ Not started | 0% | Produce baseline market diagnostics |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Run independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Build leakage-safe regime dataset |
@@ -29,27 +29,31 @@ Overall completion: **~80% of Phase 1**
 
 ### Phase 1 — Literature/source validation
 
-- Created `docs/SOURCES_SEBI_FY25_FY26.md` as a claim-level primary-source registry.
-- Extracted the principal FY25–FY26 SEBI profitability statistics directly from the primary SEBI report.
-- Recorded the official SEBI press-release findings for the trading-behaviour study, including the study design and population caveats.
-- Added explicit source IDs S1/S2/S3 and claim IDs to preserve provenance.
-- Recorded important denominator distinctions, including unique-trader loss rates versus trader-quarter loss rates.
-- Added transaction-cost and expiry-concentration evidence to the research context.
-- Updated `docs/SOURCE_AUDIT.md` and `docs/LITERATURE_MATRIX.md` to reflect the completed extraction.
-- Kept all SEBI findings as descriptive/associational context rather than evidence of strategy profitability.
+- Added the claim-level SEBI source registry and mapped source IDs into hypotheses and experiments.
+- Completed the Phase 1 exit review after GitHub Actions validation succeeded on the latest protocol commit.
+- Confirmed the research repository distinguishes unique-trader loss rates, trader-quarter loss rates, product shares, transaction costs and other denominators rather than collapsing them into one statistic.
+- Confirmed no SEBI association is encoded as a causal effect.
 
-### Phase 0
+### Phase 2 — Data engineering
 
-- Repository architecture, research plan, charter, hypothesis registry, data specification, validation framework, experiment registry, validator and GitHub Actions scaffold are in place.
-- Draft PR #2 remains the integration point for the research scaffold.
+- Created `docs/DATA_SOURCE_REGISTRY.md`.
+- Audited current official NSE public data surfaces for underlying prices, derivatives reports, contract information and India VIX.
+- Identified NSE paid EOD/historical order-and-trade data as the candidate high-resolution source for execution/microstructure research.
+- Identified RBI Treasury-bill/yield publications as a candidate public risk-free-rate source.
+- Added a critical data-availability gate: public/current option-chain access must not be assumed to provide a complete historical quote archive suitable for rigorous VRP/SABR/execution studies.
+- Defined the minimum field contract and point-in-time `available_at` rule.
+
+### CI verification
+
+GitHub Actions run `35278800843` on head `6d5db8a8b5d66a12ee09270e5db92ce398427c88` completed successfully. The protocol validator and artifact publication steps passed.
 
 ## Immediate next tasks
 
-1. Add S1/S2/S3 source IDs to the relevant hypothesis and experiment records where they are used as empirical context.
-2. Run/verify GitHub Actions on the latest branch commit; CI has not yet been confirmed for the newest commit.
-3. Perform the formal Phase 1 exit review against the source-coverage gate.
-4. If the exit review passes, freeze the Phase 2 data specification and begin data-source engineering.
-5. Do not begin strategy backtesting merely from the SEBI findings; they are context/segmentation evidence, not proof of an exploitable edge.
+1. Build the Phase 2 source adapters/interfaces for NSE EOD, NSE contract metadata and India VIX.
+2. Build the RBI rate-data adapter/proxy specification.
+3. Acquire or identify a representative historical option quote dataset and test it against the full option field contract.
+4. Decide whether licensed NSE historical order/trade data or a vendor dataset is required for Tracks A–C and G.
+5. Create the first immutable raw-data snapshot only after schema and point-in-time tests pass.
 
 ## Decision log
 
@@ -76,3 +80,9 @@ Overall completion: **~80% of Phase 1**
 
 ### D1.4 — No causal overreach
 **Decision:** Associations reported by SEBI, such as trading intensity versus loss incidence, will not be encoded as causal effects without an appropriate causal design.
+
+### D2.1 — Data availability is a research constraint
+**Decision:** No strategy will be treated as executable merely because EOD prices exist. Historical bid/ask/depth availability must be verified separately for each experiment family.
+
+### D2.2 — Point-in-time data
+**Decision:** All research features require an `available_at` timestamp and as-of contract metadata; future information leakage through revised contract definitions or quote joins is prohibited.
