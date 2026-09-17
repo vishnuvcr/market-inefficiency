@@ -32,17 +32,7 @@ This repository is a **research laboratory**, not a signal-selling or performanc
 ### Phase 0 — Governance, reproducibility, and GitHub infrastructure
 **Goal:** establish a research environment that cannot silently change the rules after observing results.
 
-Subphases:
-- 0.1 Repository architecture.
-- 0.2 Hypothesis registry and immutable IDs.
-- 0.3 Dataset/version registry.
-- 0.4 Configuration and experiment naming conventions.
-- 0.5 GitHub Actions CI and research-health checks.
-- 0.6 Research decision log.
-
 **Status:** 100% — exit gate passed on the current scaffold.
-
-**Exit gate:** protocol, configuration, validator, and status system pass automated checks.
 
 ### Phase 1 — Literature and source validation
 **Goal:** convert the uploaded protocol into a verified evidence base.
@@ -59,16 +49,14 @@ Subphases:
 
 **Phase 1 methodological decision:** Hurst exponent is a candidate feature, not a standalone inefficiency classifier. H != 0.5 must be evaluated against estimator uncertainty and surrogate/random-walk controls.
 
-**Exit gate:** every high-impact externally asserted empirical claim used by the current code/report has a traceable source entry; primary claims have population/period/definition metadata; CI validates the repository structure.
-
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
 
-**Status: ~40% — schema, PIT controls, adapter interfaces and synthetic fixture validation implemented; real-source acquisition remains.**
+**Status: ~45% — schema/PIT controls, adapter interfaces, synthetic validation and the first NSE F&O EOD normalization path are implemented; real-source acceptance remains.**
 
 Subphases:
 - 2.1 **Source inventory and acquisition plan — complete.** Official NSE and RBI data surfaces have been identified; paid/licensed high-resolution data gaps are explicitly recorded.
-- 2.2 **Adapter interfaces — complete.** Canonical interfaces defined for NSE cash/EOD, derivatives EOD, contract master, India VIX, RBI rates, licensed NSE order/trade data and vendor options data.
+- 2.2 **Adapter interfaces and first normalization path — substantially complete.** Canonical interfaces are defined, and `DS-NSE-FO-EOD` now has a deterministic CSV normalization path. Remaining adapters are interface-ready.
 - 2.3 **Underlying OHLCV pipeline — interface-ready.** Real-source ingestion and corporate-action reconciliation pending.
 - 2.4 **Full option-chain history — acquisition validation required.** Required fields: timestamp, underlying, expiry, strike, call/put, bid/ask, LTP, volume, OI, quote size/depth, multiplier/lot size and settlement.
 - 2.5 **Contract-specification/version history — interface-ready.** Effective-date joins are mandatory.
@@ -78,8 +66,6 @@ Subphases:
 - 2.9 **Immutable dataset snapshots and hashes — contract defined; first real snapshot pending acquisition.**
 
 **Phase 2 data-availability rule:** public EOD data can support the first layer of descriptive and stylized-fact research, but historical bid/ask/depth coverage must be independently verified before any executable option strategy is backtested. The current option-chain interface is not assumed to be a complete historical quote archive.
-
-**SEBI-informed Phase 2 priorities:** expiry distance, option buy/sell classification, transaction-cost fields, capital/portfolio segmentation and activity measures should be retained where the data source permits.
 
 **Exit gate:** a point-in-time data slice can be reconstructed exactly from a version identifier and all mandatory source/quality checks pass.
 
