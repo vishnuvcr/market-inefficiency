@@ -30,6 +30,9 @@ jobs:
       - name: Validate Phase 2 synthetic fixture
         run: python scripts/validate_phase2_fixture.py
 
+      - name: Test NSE F&O EOD normalization adapter
+        run: python scripts/test_nse_fo_eod_adapter.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
