@@ -64,17 +64,18 @@ Subphases:
 ### Phase 2 — Data engineering and market representation
 **Goal:** build leakage-safe, point-in-time datasets.
 
-**Status: 15% — source audit and field contract complete; acquisition/ingestion not yet complete.**
+**Status: ~40% — schema, PIT controls, adapter interfaces and synthetic fixture validation implemented; real-source acquisition remains.**
 
 Subphases:
 - 2.1 **Source inventory and acquisition plan — complete.** Official NSE and RBI data surfaces have been identified; paid/licensed high-resolution data gaps are explicitly recorded.
-- 2.2 **Underlying OHLCV and corporate-action pipeline — planned.**
-- 2.3 **Full option-chain history — acquisition validation required.** Required fields: timestamp, underlying, expiry, strike, call/put, bid/ask, LTP, volume, OI, quote size/depth, multiplier/lot size and settlement.
-- 2.4 **Contract-specification/version history — planned.** Effective-date joins are mandatory.
-- 2.5 **Risk-free rate and India VIX inputs — source interfaces defined.**
-- 2.6 **Intraday/order-trade data — access decision required.** Needed for execution/microstructure work and potentially for rigorous quote-based option studies.
-- 2.7 **Data-quality and point-in-time tests — planned.** Missingness, stale/crossed quotes, duplicates, invalid prices, timestamp ordering and contract validity.
-- 2.8 **Immutable dataset snapshots and hashes — planned.**
+- 2.2 **Adapter interfaces — complete.** Canonical interfaces defined for NSE cash/EOD, derivatives EOD, contract master, India VIX, RBI rates, licensed NSE order/trade data and vendor options data.
+- 2.3 **Underlying OHLCV pipeline — interface-ready.** Real-source ingestion and corporate-action reconciliation pending.
+- 2.4 **Full option-chain history — acquisition validation required.** Required fields: timestamp, underlying, expiry, strike, call/put, bid/ask, LTP, volume, OI, quote size/depth, multiplier/lot size and settlement.
+- 2.5 **Contract-specification/version history — interface-ready.** Effective-date joins are mandatory.
+- 2.6 **Risk-free rate and India VIX inputs — interface-ready.**
+- 2.7 **Intraday/order-trade data — access decision required.** Needed for execution/microstructure work and potentially for rigorous quote-based option studies.
+- 2.8 **Data-quality and point-in-time tests — synthetic fixture implemented; real-data validation pending.**
+- 2.9 **Immutable dataset snapshots and hashes — contract defined; first real snapshot pending acquisition.**
 
 **Phase 2 data-availability rule:** public EOD data can support the first layer of descriptive and stylized-fact research, but historical bid/ask/depth coverage must be independently verified before any executable option strategy is backtested. The current option-chain interface is not assumed to be a complete historical quote archive.
 
