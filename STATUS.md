@@ -8,7 +8,7 @@ Last updated: 2026-09-18
 
 Status: **IN PROGRESS**
 
-Overall completion: **~15% of Phase 2**
+Overall completion: **~30% of Phase 2**
 
 ## Phase tracker
 
@@ -16,7 +16,7 @@ Overall completion: **~15% of Phase 2**
 |---|---|---:|---|
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI on current protocol scaffold |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed; source registry and claim mapping complete |
-| 2. Data engineering | 🟡 In progress | 15% | Source acquisition + schema acceptance |
+| 2. Data engineering | 🟡 In progress | 30% | Schema + PIT acceptance; source acquisition remains |
 | 3. Stylized facts | ⚪ Not started | 0% | Produce baseline market diagnostics |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Run independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Build leakage-safe regime dataset |
@@ -42,18 +42,19 @@ Overall completion: **~15% of Phase 2**
 - Identified RBI Treasury-bill/yield publications as a candidate public risk-free-rate source.
 - Added a critical data-availability gate: public/current option-chain access must not be assumed to provide a complete historical quote archive suitable for rigorous VRP/SABR/execution studies.
 - Defined the minimum field contract and point-in-time `available_at` rule.
-
-### CI verification
-
-GitHub Actions run `35278800843` on head `6d5db8a8b5d66a12ee09270e5db92ce398427c88` completed successfully. The protocol validator and artifact publication steps passed.
+- Added machine-readable `config/data_schema.json` covering underlying EOD, option EOD, contract master, India VIX, risk-free and intraday quote/trade layers.
+- Added `scripts/validate_data_schema.py` to enforce required layers, deterministic keys, point-in-time fields, global quality rules and immutable snapshot-manifest fields.
+- Updated `docs/DATA_SPECIFICATION.md` to formalize timestamp, contract-effective-date, quote-hygiene and immutable-snapshot rules.
+- Added the Phase 2 data-contract validator to GitHub Actions.
 
 ## Immediate next tasks
 
-1. Build the Phase 2 source adapters/interfaces for NSE EOD, NSE contract metadata and India VIX.
+1. Build source adapter interfaces for public NSE EOD, derivatives contract-wise data, contract metadata and India VIX.
 2. Build the RBI rate-data adapter/proxy specification.
 3. Acquire or identify a representative historical option quote dataset and test it against the full option field contract.
 4. Decide whether licensed NSE historical order/trade data or a vendor dataset is required for Tracks A–C and G.
-5. Create the first immutable raw-data snapshot only after schema and point-in-time tests pass.
+5. Implement dataset-quality reporting and a synthetic fixture test suite without committing licensed market data.
+6. Create the first immutable raw-data snapshot only after schema, timestamp, contract and point-in-time tests pass.
 
 ## Decision log
 
@@ -86,3 +87,9 @@ GitHub Actions run `35278800843` on head `6d5db8a8b5d66a12ee09270e5db92ce398427c
 
 ### D2.2 — Point-in-time data
 **Decision:** All research features require an `available_at` timestamp and as-of contract metadata; future information leakage through revised contract definitions or quote joins is prohibited.
+
+### D2.3 — Machine-readable data contract
+**Decision:** `config/data_schema.json` is the canonical Phase 2 field/key/quality contract. Changes to it require a version increment and corresponding validator/test update.
+
+### D2.4 — Licensed-data boundary
+**Decision:** Raw licensed NSE/vendor datasets remain outside the public repository. The repository stores schemas, manifests, hashes, diagnostics and reproducible code, not restricted market data.
