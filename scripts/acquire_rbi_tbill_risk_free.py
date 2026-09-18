@@ -117,7 +117,7 @@ def get_source_blob_sha() -> str:
             [
                 "gh",
                 "api",
-                f"/repos/{SOURCE_REPO}/contents/{SOURCE_PATH}?ref={SOURCE_REF}",
+                f"repos/{SOURCE_REPO}/contents/{SOURCE_PATH}?ref={SOURCE_REF}",
                 "--jq",
                 ".sha",
             ],
