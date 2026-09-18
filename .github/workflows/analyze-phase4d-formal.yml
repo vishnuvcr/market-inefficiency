@@ -1,0 +1,90 @@
+name: Phase 4D — formal H-A2 H-B1 H-C1 diagnostics
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - scripts/analyze_phase4d_formal.py
+      - .github/workflows/analyze-phase4d-formal.yml
+      - docs/PHASE4D_INPUT_LOCK.json
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+env:
+  PHASE4B_RUN_ID: "35393747845"
+  UNDERLYING_RUN_ID: "35386941363"
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy
+
+      - name: Show frozen Phase 4 input lock
+        run: cat docs/PHASE4D_INPUT_LOCK.json
+
+      - name: Download frozen Phase 4B IV artifact
+        uses: actions/download-artifact@v5
+        with:
+          github-token: \${{ github.token }}
+          repository: \${{ github.repository }}
+          run-id: \${{ env.PHASE4B_RUN_ID }}
+          pattern: phase4b-iv-surfaces-*
+          path: data/phase4d_iv
+          merge-multiple: true
+
+      - name: Download frozen official NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: \${{ github.token }}
+          repository: \${{ github.repository }}
+          run-id: \${{ env.UNDERLYING_RUN_ID }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase4d_inputs/underlying
+          merge-multiple: true
+
+      - name: Validate downloaded inputs
+        run: |
+          test -f data/phase4d_iv/PHASE4B_IV_MANIFEST.json
+          test -f data/phase4d_iv/iv_observations_2020.csv.gz
+          test -f data/phase4d_inputs/underlying/nifty50_ohlc.csv
+          python - <<'PY'
+          import json, pandas as pd
+          from pathlib import Path
+          m=json.loads(Path("data/phase4d_iv/PHASE4B_IV_MANIFEST.json").read_text())
+          assert m.get("status") == "PASS", m
+          assert m.get("model") == "Black-76", m
+          x=pd.read_csv("data/phase4d_inputs/underlying/nifty50_ohlc.csv")
+          assert len(x) >= 1400, len(x)
+          assert pd.to_datetime(x["date"]).min().strftime("%Y-%m-%d") == "2020-04-13"
+          assert pd.to_datetime(x["date"]).max().strftime("%Y-%m-%d") == "2026-05-14"
+          print("Phase 4D input validation passed")
+          PY
+
+      - name: Run formal H-A2 H-B1 H-C1 diagnostics
+        run: |
+          python scripts/analyze_phase4d_formal.py \
+            --iv-root data/phase4d_iv \
+            --underlying data/phase4d_inputs/underlying/nifty50_ohlc.csv \
+            --output data/phase4d_report
+
+      - name: Upload Phase 4D report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4d-formal-diagnostics-\${{ github.sha }}
+          path: data/phase4d_report/
+          if-no-files-found: error
+          retention-days: 90
