@@ -1,0 +1,108 @@
+name: Phase 4B — reconstruct NIFTY implied-volatility surfaces
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - scripts/reconstruct_phase4b_iv.py
+      - .github/workflows/reconstruct-phase4b-iv.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  reconstruct:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy scipy
+
+      - name: Resolve immutable Phase 4A inputs
+        id: runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          opt_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire historical NIFTY OPTIDX EOD partitions"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          und_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          rec_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Reconcile NIFTY OPTIDX historical snapshot"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          rf_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire RBI PIT risk-free curve"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          freeze_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Freeze Phase 4A PIT snapshot"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          for x in "$opt_run" "$und_run" "$rec_run" "$rf_run" "$freeze_run"; do test -n "$x"; done
+          echo "opt_run=$opt_run" >> "$GITHUB_OUTPUT"
+          echo "und_run=$und_run" >> "$GITHUB_OUTPUT"
+          echo "rec_run=$rec_run" >> "$GITHUB_OUTPUT"
+          echo "rf_run=$rf_run" >> "$GITHUB_OUTPUT"
+          echo "freeze_run=$freeze_run" >> "$GITHUB_OUTPUT"
+
+      - name: Download immutable option partitions
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.opt_run }}
+          pattern: nse-nifty-optidx-*
+          path: data/phase4b_options
+          merge-multiple: false
+
+      - name: Download NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.und_run }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase4b_inputs/underlying
+          merge-multiple: true
+
+      - name: Download NIFTY lot master
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.rec_run }}
+          pattern: phase4a-nifty-contract-master-*
+          path: data/phase4b_inputs/lot_master
+          merge-multiple: true
+
+      - name: Download RBI PIT risk-free
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.rf_run }}
+          pattern: phase4a-rbi-risk-free-*
+          path: data/phase4b_inputs/risk_free
+          merge-multiple: true
+
+      - name: Verify Phase 4A snapshot is frozen
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.freeze_run }}
+          pattern: phase4a-pit-snapshot-*
+          path: data/phase4b_inputs/pit_snapshot
+          merge-multiple: true
+
+      - name: Reconstruct IV surfaces
+        run: |
+          python scripts/reconstruct_phase4b_iv.py             --options-root data/phase4b_options             --underlying data/phase4b_inputs/underlying/nifty50_ohlc.csv             --risk-free data/phase4b_inputs/risk_free/rbi_risk_free_daily_curve.csv             --lot-master data/phase4b_inputs/lot_master/NIFTY_CONTRACT_MASTER.csv             --output data/phase4b_iv
+
+      - name: Upload Phase 4B IV dataset
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4b-iv-surfaces-${{ github.sha }}
+          path: data/phase4b_iv/
+          if-no-files-found: error
+          retention-days: 90
