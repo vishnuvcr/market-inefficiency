@@ -4,11 +4,11 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 4 — Preregistered option-market hypothesis testing**
+**Phase 7 — Statistical validation of the broad prediction/strategy screen**
 
-Status: **PHASE 4A PIT SNAPSHOT FROZEN; PHASE 4B IV RECONSTRUCTION PASSED; PHASE 4C VRP DIAGNOSTICS PASSED; PHASE 4D FORMAL H-A2/H-B1/H-C1 DIAGNOSTICS PASSED**
+Status: **PHASE 4 PIT/IV/VRP/SURFACE TESTS PASSED; PHASE 5 BROAD PREDICTION COMPLETED; PHASE 6 STRATEGY SCREEN COMPLETED; PHASE 7 CPCV/PBO/DSR DIAGNOSTICS COMPLETED**
 
-Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
+The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
 ## Phase tracker
 
@@ -19,9 +19,9 @@ Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now b
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
 | 4. Option-market hypotheses | 🟢 Formal PIT/IV + VRP + H-A2/H-B1/H-C1 gates passed | 85% | Economic/execution validation and multiplicity controls |
-| 5. Multimodal regime model | 🟡 Prepared by Phase 4D surface features | 20% | Leakage-safe multimodal feature construction |
-| 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
-| 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
+| 5. Multimodal prediction | 🟢 Completed | 100% | Direct direction rejected; volatility-expansion signal retained for further study |
+| 6. Strategy translation | 🟡 Candidate screen completed | 60% | Translate volatility-state prediction into independently validated strategy families |
+| 7. Statistical validation | 🟢 Current candidate stress-tested | 70% | Current inverse-direction candidate rejected for promotion; next branch must be re-specified |
 | 8. Paper trading | ⚪ Not started | 0% | Post-validation only |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
@@ -193,9 +193,18 @@ The Phase 4D holdout materially refines the research direction. **Aggregate VRP 
 
 Detailed reproducible results are recorded in docs/PHASE4D_RESULTS.md.
 
-## Immediate next gates
+## Phase 5 — broad market prediction
 
-1. Build the Phase 5 multimodal regime feature set around the surviving surface-shape signals, with strict point-in-time construction.
-2. Acquire/validate quote or order-trade data before treating any surface signal as executable.
-3. Translate surface predictability into explicit market-neutral candidate returns and apply realistic transaction costs/slippage.
-4. Run CPCV, Deflated Sharpe Ratio, Probability of Backtest Overfitting, stress tests and an untouched chronological holdout before any strategy-level conclusion.
+The multimodal model used price, volatility, memory and the frozen option surface. On the untouched 20% holdout, next-day direction AUC was **0.4584**, accuracy **48.2%**, and 5-session return OOS R² **-0.1038**. In contrast, 5-session volatility expansion had AUC **0.6879** and accuracy **61.1%**. This is the most useful broad-prediction result so far.
+
+## Phase 6 — strategy translation
+
+A fixed six-rule family was screened with an 80/10/10 chronology. The validation-selected inverse-direction rule was positive on the final 10% at 5 bps/side (Sharpe **0.417**) and 10 bps/side (Sharpe **0.129**) but negative at 20 bps/side (Sharpe **-0.437**). These are settlement-to-settlement proxies, not observed fills.
+
+## Phase 7 — current usable conclusion
+
+CPCV over the first 90% produced **28 paths**. For the frozen inverse-direction candidate at 10 bps/side, median Sharpe was **-0.419** and only **28.6%** of paths were positive. The six-candidate CSCV-style PBO proxy was **0.464**. The approximate DSR diagnostic was effectively zero (**7.49e-62**). The current directional candidate is therefore **rejected for promotion**.
+
+The research direction is now clear: do not spend further effort optimizing this inverse-direction strategy. The next independent branch should exploit the stronger **volatility-expansion prediction** and test strategy families conditionally on predicted volatility state. Option-surface skew remains a parallel predictive branch, but executable options claims still require quote/order-trade data.
+
+See docs/PHASE5_RESULTS.md, docs/PHASE6_RESULTS.md, and docs/PHASE7_RESULTS.md.
