@@ -20,7 +20,7 @@ from pathlib import Path
 
 import pandas as pd
 
-GAP_DATES = {"2021-03-30"}
+GAP_DATES = {"2021-03-30", "2024-03-02"}
 DECISION_HOUR = "23:59:59+05:30"
 
 
