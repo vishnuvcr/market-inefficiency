@@ -74,13 +74,13 @@ Subphases:
 ### Phase 3 — Stylized facts and inefficiency discovery
 **Goal:** determine whether the market characteristics assumed by the protocol are actually present in the chosen universe.
 
-**Status: ~20% — Phase 3.1 and 3.2 diagnostic scaffolds implemented; real-data evidence remains gated on validated immutable snapshots.**
+**Status: ~30% — Phase 3.1–3.3 diagnostic scaffolds implemented; real-data evidence remains gated on validated immutable snapshots.**
 
 Subphases:
 - 3.1 **Stylized-fact baseline — scaffold complete.** Coverage, returns, tails, absolute-return autocorrelation and drawdown diagnostics.
 - 3.2 **Realized volatility — scaffold complete.** Close-to-close, Parkinson, Garman–Klass and Yang–Zhang estimators with explicit sampling/annualization controls.
-- 3.3 **Volatility persistence — planned.** ACF/PACF, rolling volatility, clustering diagnostics and uncertainty.
-- 3.4 **Jump diagnostics — planned.**
+- 3.3 **Volatility persistence — scaffold complete.** ACF/PACF, rolling volatility, clustering diagnostics and an explicit IID reference-interval uncertainty diagnostic.
+- 3.4 **Jump diagnostics — next.** Multiple jump estimators and sensitivity to sampling frequency.
 - 3.5 **Memory/dependence — planned.** Hurst/MFDFA with estimator uncertainty and surrogate controls.
 - 3.6 **Descriptive regime segmentation — planned.**
 - 3.7 **Discovery report — planned.** Only pre-specified, robust findings may become Phase 4 hypotheses.
