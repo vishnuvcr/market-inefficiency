@@ -8,6 +8,9 @@ on:
       - scripts/analyze_phase4d_formal.py
       - .github/workflows/analyze-phase4d-formal.yml
       - docs/PHASE4D_INPUT_LOCK.json
+  pull_request:
+    branches:
+      - research/v1.0-protocol
   workflow_dispatch:
 
 permissions:
