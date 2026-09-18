@@ -129,7 +129,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          artifact-id: 10567387234
+          artifact-ids: 10567387234
           path: data/old_iv
 
       - name: Download frozen historical official underlying
@@ -137,7 +137,7 @@ jobs:
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          artifact-id: 10564212363
+          artifact-ids: 10564212363
           path: data/old_underlying
 
       - name: Run Phase 8 forward validation
