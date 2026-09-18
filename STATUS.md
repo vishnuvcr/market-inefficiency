@@ -9,7 +9,7 @@ Last updated: 2026-09-18
 Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
 
 Overall Phase 2 completion: **~55%**  
-Phase 3.1–3.5 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3.1–3.6 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3.1–3.5 implementation: **complete as deterministic diagnostic scaffolds
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 50% | Run Phase 3.1–3.5 against validated NIFTY/VIX snapshot |
+| 3. Stylized facts | 🟡 Scaffold implemented | 60% | Run Phase 3.1–3.6 against validated NIFTY/VIX snapshot |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
@@ -68,6 +68,10 @@ Added `scripts/phase3_memory_dependence.py` and its deterministic test. The scaf
 
 The estimator, scale range, bootstrap seed and requested replicate count are recorded in the output. The result is explicitly diagnostic-only. Deviation from H = 0.5 or a non-zero multifractal width is not treated as evidence of exploitable inefficiency.
 
+## Phase 3.6 implementation
+
+Added `scripts/phase3_regime_segmentation.py` and its deterministic test. The scaffold creates transparent descriptive labels from rolling-return volatility terciles and contemporaneous return direction, then reports regime occupancy, transitions and run lengths. It is explicitly non-predictive and does not authorize execution backtesting.
+
 ## Phase 3 roadmap
 
 1. 3.1 Stylized-fact baseline — scaffold complete.
@@ -75,8 +79,8 @@ The estimator, scale range, bootstrap seed and requested replicate count are rec
 3. 3.3 Volatility persistence — scaffold complete; robust real-data uncertainty validation pending.
 4. 3.4 Jump diagnostics — scaffold complete; real-data and frequency-sensitivity validation pending.
 5. 3.5 Memory/dependence — scaffold complete; real-data estimator/surrogate validation pending.
-6. 3.6 Regime segmentation — descriptive, non-predictive segmentation before HMM/GMM.
-7. 3.7 Discovery report — translate only robust, pre-specified findings into Phase 4 hypotheses.
+6. 3.6 Regime segmentation — scaffold complete; real-data/session validation pending.
+7. 3.7 Discovery report — next; translate only robust, pre-specified findings into Phase 4 hypotheses.
 
 ## Mandatory guardrail
 
