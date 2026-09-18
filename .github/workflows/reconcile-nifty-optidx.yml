@@ -7,6 +7,8 @@ on:
     paths:
       - .github/workflows/reconcile-nifty-optidx.yml
       - scripts/reconcile_nifty_optidx_historical.py
+      - scripts/audit_phase4a_calendar_gaps.py
+      - data/phase4a/nse_fno_gap_audit.csv
   workflow_run:
     workflows: ["Acquire historical NIFTY OPTIDX EOD partitions"]
     types: [completed]
@@ -79,10 +81,25 @@ jobs:
             --root data/phase4a_artifacts \
             --output PHASE4A_RECONCILIATION.json
 
+      - name: Audit weekday calendar gaps
+        run: |
+          python scripts/audit_phase4a_calendar_gaps.py \
+            --reconciliation PHASE4A_RECONCILIATION.json \
+            --registry data/phase4a/nse_fno_gap_audit.csv \
+            --output PHASE4A_CALENDAR_AUDIT.json
+
       - name: Upload reconciliation report
         uses: actions/upload-artifact@v4
         with:
           name: phase4a-reconciliation-${{ steps.run.outputs.run_id }}
           path: PHASE4A_RECONCILIATION.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload calendar audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-calendar-audit-${{ steps.run.outputs.run_id }}
+          path: PHASE4A_CALENDAR_AUDIT.json
           if-no-files-found: error
           retention-days: 90
