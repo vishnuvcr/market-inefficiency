@@ -1,0 +1,40 @@
+name: Probe NSE option EOD access
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - "scripts/probe_nse_fno_historical.py"
+      - ".github/workflows/probe-nse-option-eod.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --upgrade requests
+
+      - name: Probe public NSE historical option interface
+        run: |
+          python scripts/probe_nse_fno_historical.py
+          test -s data/nse_probe/nse_option_eod_probe.json
+
+      - name: Upload probe artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-option-eod-probe-${{ github.sha }}
+          path: data/nse_probe/nse_option_eod_probe.json
+          if-no-files-found: error
