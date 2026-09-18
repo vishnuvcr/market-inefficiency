@@ -51,6 +51,9 @@ jobs:
       - name: Test Phase 3.2 realized-volatility diagnostics
         run: python scripts/test_phase3_realized_volatility.py
 
+      - name: Test Phase 3.3 volatility-persistence diagnostics
+        run: python scripts/test_phase3_volatility_persistence.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
