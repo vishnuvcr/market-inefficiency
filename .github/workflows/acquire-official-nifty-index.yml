@@ -2,6 +2,11 @@ name: Acquire official NIFTY 50 underlying
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches: [research/v1.0-protocol]
+    paths:
+      - scripts/acquire_official_nifty_index.py
+      - .github/workflows/acquire-official-nifty-index.yml
   push:
     branches: [research/v1.0-protocol]
     paths:
@@ -17,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: research/v1.0-protocol
+          ref: ${{ github.event.pull_request.base.ref || 'research/v1.0-protocol' }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
