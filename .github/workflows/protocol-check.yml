@@ -20,7 +20,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Install research dependencies
-        run: python -m pip install --disable-pip-version-check "pandas>=2.2,<3"
+        run: python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "scipy>=1.13,<2"
       - name: Validate repository protocol
         run: python scripts/validate_protocol.py
       - name: Validate Phase 2 data contract
