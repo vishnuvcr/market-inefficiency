@@ -51,6 +51,9 @@ jobs:
 
       - name: Test Phase 3.6 descriptive regime segmentation
         run: python scripts/test_phase3_regime_segmentation.py
+
+      - name: Test Phase 3.7 discovery diagnostics
+        run: python scripts/test_phase3_7_discovery.py
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
