@@ -9,7 +9,7 @@ Last updated: 2026-09-18
 Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
 
 Overall Phase 2 completion: **~55%**  
-Phase 3.1–3.3 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3.1–3.4 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3.1–3.3 implementation: **complete as deterministic diagnostic scaffolds
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 30% | Run Phase 3.1–3.3 against validated NIFTY/VIX snapshot |
+| 3. Stylized facts | 🟡 Scaffold implemented | 40% | Run Phase 3.1–3.4 against validated NIFTY/VIX snapshot |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
@@ -53,12 +53,16 @@ No real-market statistic is reported yet because the exact external snapshot byt
 
 Added `scripts/phase3_volatility_persistence.py` and its deterministic CI test. The diagnostic reports return/absolute-return/squared-return ACFs, Durbin–Levinson PACF, rolling volatility summaries, clustering indicators, and an explicit IID reference interval. The uncertainty interval is labelled as a benchmark rather than a robust time-series confidence interval. The module remains descriptive-only.
 
+## Phase 3.4 implementation
+
+Added `scripts/phase3_jump_diagnostics.py` and its deterministic CI test. The diagnostic provides a robust standardized-return jump proxy, a bipower-variation-style excess-variation proxy, and a Parkinson range-based excess-variation proxy. It explicitly records sampling sensitivity and remains descriptive-only; a jump proxy is not evidence of tradable mispricing.
+
 ## Phase 3 roadmap
 
 1. 3.1 Stylized-fact baseline — scaffold complete.
 2. 3.2 Realized volatility — close-to-close, Parkinson, Garman–Klass and Yang–Zhang comparison where fields support them.
 3. 3.3 Volatility persistence — ACF/PACF, rolling volatility, clustering diagnostics and explicit uncertainty benchmark.
-4. 3.4 Jump diagnostics — multiple jump estimators and sensitivity to sampling frequency.
+4. 3.4 Jump diagnostics — multiple jump estimators and sensitivity to sampling frequency. Scaffold complete; real-data and frequency-sensitivity validation pending.
 5. 3.5 Memory/dependence — Hurst/MFDFA plus estimator uncertainty and surrogate/random-walk controls.
 6. 3.6 Regime segmentation — descriptive, non-predictive segmentation before HMM/GMM.
 7. 3.7 Discovery report — translate only robust, pre-specified findings into Phase 4 hypotheses.
