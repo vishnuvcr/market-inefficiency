@@ -20,8 +20,8 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - name: Install Kaggle CLI
-        run: python -m pip install --disable-pip-version-check "kaggle>=2.0"
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check "kaggle>=2.0" "pandas>=2.2,<3" "numpy>=2,<3"
       - name: Download NIFTY 50 minute file
         run: |
           mkdir -p data/kaggle_snapshot
@@ -100,7 +100,6 @@ jobs:
           PY
       - name: Run Phase 3 descriptive diagnostics
         run: |
-          python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=2,<3"
           python scripts/phase3_stylized_facts.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_1_stylized_facts.json
           python scripts/phase3_realized_volatility.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_2_realized_volatility.json
           python scripts/phase3_volatility_persistence.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_3_volatility_persistence.json
