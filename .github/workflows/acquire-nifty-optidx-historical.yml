@@ -2,6 +2,13 @@ name: Acquire historical NIFTY OPTIDX EOD partitions
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - "scripts/acquire_nse_nifty_optidx.py"
+      - "scripts/validate_nse_nifty_optidx_snapshot.py"
+      - ".github/workflows/acquire-nifty-optidx-historical.yml"
 
 permissions:
   contents: read
