@@ -9,7 +9,7 @@ Last updated: 2026-09-18
 Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
 
 Overall Phase 2 completion: **~55%**  
-Phase 3.1–3.2 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3.1–3.3 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3.1–3.2 implementation: **complete as deterministic diagnostic scaffolds
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 20% | Run Phase 3.1–3.2 against validated NIFTY/VIX snapshot |
+| 3. Stylized facts | 🟡 Scaffold implemented | 30% | Run Phase 3.1–3.3 against validated NIFTY/VIX snapshot |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
@@ -49,11 +49,15 @@ The selected Kaggle source is debashis74017/nifty-50-minute-data, described by i
 
 No real-market statistic is reported yet because the exact external snapshot bytes have not been acquired and hashed in the research runtime.
 
+## Phase 3.3 implementation
+
+Added `scripts/phase3_volatility_persistence.py` and its deterministic CI test. The diagnostic reports return/absolute-return/squared-return ACFs, Durbin–Levinson PACF, rolling volatility summaries, clustering indicators, and an explicit IID reference interval. The uncertainty interval is labelled as a benchmark rather than a robust time-series confidence interval. The module remains descriptive-only.
+
 ## Phase 3 roadmap
 
 1. 3.1 Stylized-fact baseline — scaffold complete.
 2. 3.2 Realized volatility — close-to-close, Parkinson, Garman–Klass and Yang–Zhang comparison where fields support them.
-3. 3.3 Volatility persistence — ACF/PACF, rolling volatility, clustering diagnostics and robust uncertainty.
+3. 3.3 Volatility persistence — ACF/PACF, rolling volatility, clustering diagnostics and explicit uncertainty benchmark.
 4. 3.4 Jump diagnostics — multiple jump estimators and sensitivity to sampling frequency.
 5. 3.5 Memory/dependence — Hurst/MFDFA plus estimator uncertainty and surrogate/random-walk controls.
 6. 3.6 Regime segmentation — descriptive, non-predictive segmentation before HMM/GMM.
@@ -70,5 +74,5 @@ Phase 3 findings are descriptive evidence only. No apparent pattern will be labe
 3. Run quality/exclusion diagnostics and snapshot-manifest generation.
 4. Execute Phase 3.1 on the validated real snapshot.
 5. Execute Phase 3.1–3.2 on the validated real snapshot.
-6. Build Phase 3.3 volatility persistence diagnostics.
+6. Build Phase 3.4 jump diagnostics.
 7. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
