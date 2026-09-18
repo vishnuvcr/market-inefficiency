@@ -6,7 +6,9 @@ on:
       - research/v1.0-protocol
     paths:
       - "scripts/probe_nse_fno_historical.py"
+      - "scripts/probe_nse_option_surface.py"
       - "scripts/probe_nse_udiff_bhavcopy.py"
+      - "scripts/probe_nse_archive_boundary.py"
       - ".github/workflows/probe-nse-option-eod.yml"
   workflow_dispatch:
 
@@ -19,25 +21,28 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
-
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-
       - name: Install dependencies
         run: python -m pip install --upgrade requests pandas
-
       - name: Probe public NSE historical option interface
         run: |
           python scripts/probe_nse_fno_historical.py
           test -s data/nse_probe/nse_option_eod_probe.json
-
+      - name: Probe NIFTY option cross-section query
+        run: |
+          python scripts/probe_nse_option_surface.py
+          test -s data/nse_probe/nse_surface_probe.json
       - name: Validate NSE UDiFF Common Bhavcopy route
         run: |
           python scripts/probe_nse_udiff_bhavcopy.py
           test -s data/nse_probe/udiff_bhavcopy_probe.json
-
+      - name: Probe legacy versus UDiFF boundary
+        run: |
+          python scripts/probe_nse_archive_boundary.py
+          test -s data/nse_probe/archive_boundary_probe.json
       - name: Upload probe artifacts
         uses: actions/upload-artifact@v4
         with:
