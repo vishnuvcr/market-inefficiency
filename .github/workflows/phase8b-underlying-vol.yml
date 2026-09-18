@@ -1,0 +1,71 @@
+name: Phase 8B — fresh-forward underlying volatility validation
+
+on:
+  push:
+    branches:
+      - research/phase8-volatility-forward
+    paths:
+      - scripts/phase8b_underlying_vol_forward.py
+      - scripts/acquire_niftyindices_nifty50.py
+      - .github/workflows/phase8b-underlying-vol.yml
+  workflow_dispatch:
+
+concurrency:
+  group: phase8b-underlying-vol
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  phase8b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" "scikit-learn>=1.5,<2" requests
+      - name: Acquire fresh official NIFTY 50 underlying
+        run: |
+          python scripts/acquire_niftyindices_nifty50.py --start 2026-05-15 --end 2026-09-18 --output data/phase8b/fresh
+      - name: Resolve historical underlying run
+        id: hist
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "Acquire official NIFTY 50 underlying" --branch research/v1.0-protocol --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$run"; echo "run=$run" >> "$GITHUB_OUTPUT"; echo "Using historical run $run"
+      - name: Download historical underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.hist.outputs.run }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase8b/old
+          merge-multiple: true
+      - name: Run Phase 8B
+        run: |
+          python scripts/phase8b_underlying_vol_forward.py             --old "$(find data/phase8b/old -type f -name nifty50_ohlc.csv -print -quit)"             --new data/phase8b/fresh/nifty50_ohlc.csv             --forward-start 2026-05-15             --out data/phase8b/report
+      - name: Validate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads((Path("data/phase8b/report")/"PHASE8B_UNDERLYING_VOL_REPORT.json").read_text())
+          assert r["status"]=="PASS"
+          assert r["data"]["forward_rows"]>=30
+          print("8B PASS")
+          print(json.dumps(r["forward_volatility_prediction"],indent=2))
+          print(json.dumps(r["forward_cost_sensitivity"]["20"],indent=2))
+          print(json.dumps(r["promotion_gates"],indent=2))
+          PY
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8b-underlying-vol-${{ github.sha }}
+          path: data/phase8b/report
+          retention-days: 90
