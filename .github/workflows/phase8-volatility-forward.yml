@@ -1,0 +1,168 @@
+name: Phase 8 — fresh-forward volatility strategy validation
+
+on:
+  push:
+    branches:
+      - research/phase8-volatility-forward
+    paths:
+      - scripts/phase8_volatility_conditional.py
+      - scripts/acquire_nse_nifty_optidx.py
+      - scripts/acquire_official_nifty_index.py
+      - scripts/acquire_rbi_tbill_risk_free.py
+      - scripts/build_nifty_contract_master.py
+      - scripts/reconstruct_phase4b_iv.py
+      - .github/workflows/phase8-volatility-forward.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  phase8:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check \
+            "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" \
+            "scikit-learn>=1.5,<2" requests openpyxl
+
+      - name: Acquire fresh official NIFTY 50 underlying
+        run: |
+          python scripts/acquire_official_nifty_index.py \
+            --start 2026-05-15 \
+            --end 2026-09-18
+
+      - name: Validate fresh underlying
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path("data/phase4a/external/nifty_index/nifty50_ohlc.csv")
+          x=pd.read_csv(p)
+          assert len(x) >= 60, len(x)
+          assert not x["date"].duplicated().any()
+          assert pd.Timestamp(x["date"].min()) >= pd.Timestamp("2026-05-15")
+          assert pd.Timestamp(x["date"].max()) >= pd.Timestamp("2026-09-11")
+          assert x["close"].astype(float).gt(0).all()
+          print("Fresh underlying PASS:", len(x), x["date"].min(), x["date"].max())
+          PY
+
+      - name: Acquire fresh NIFTY OPTIDX EOD
+        run: |
+          python scripts/acquire_nse_nifty_optidx.py \
+            --start 2026-05-15 \
+            --end 2026-09-18 \
+            --workers 2 \
+            --delay-seconds 1.25
+
+      - name: Validate fresh option snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("data/nse_option_snapshot/MANIFEST.json").read_text())
+          assert m["error_days"] == 0, m
+          assert m["validated_days"] >= 60, m
+          assert m["raw_preserved"] is True
+          print("Fresh options PASS:", m["validated_days"], "validated days,", m["nse_option_rows"] if "nse_option_rows" in m else "rows in daily files")
+          PY
+
+      - name: Build fresh contract master
+        run: |
+          python scripts/build_nifty_contract_master.py \
+            --normalized-dir data/nse_option_snapshot \
+            --output data/phase8/NIFTY_CONTRACT_MASTER.csv
+
+      - name: Acquire fresh PIT RBI risk-free curve
+        run: |
+          python scripts/acquire_rbi_tbill_risk_free.py \
+            --start 2026-05-15 \
+            --end 2026-09-18 \
+            --decision-dates data/phase4a/external/nifty_index/nifty50_ohlc.csv \
+            --output data/phase8/risk_free
+
+      - name: Reconstruct fresh Phase 4B IV
+        run: |
+          python scripts/reconstruct_phase4b_iv.py \
+            --options-root data/nse_option_snapshot \
+            --underlying data/phase4a/external/nifty_index/nifty50_ohlc.csv \
+            --risk-free data/phase8/risk_free/rbi_risk_free_daily_curve.csv \
+            --lot-master data/phase8/NIFTY_CONTRACT_MASTER.csv \
+            --output data/phase8/iv
+
+      - name: Validate fresh IV
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("data/phase8/iv/PHASE4B_IV_MANIFEST.json").read_text())
+          assert m["status"]=="PASS", m
+          assert m["stats"]["iv_rows"] > 100000, m
+          assert m["surface_validation"]["unique_trade_dates"] >= 50, m
+          print("Fresh IV PASS")
+          print(json.dumps(m["stats"], indent=2))
+          PY
+
+      - name: Download frozen historical Phase 4B IV
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          artifact-id: 10567387234
+          path: data/old_iv
+
+      - name: Download frozen historical official underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          artifact-id: 10564212363
+          path: data/old_underlying
+
+      - name: Run Phase 8 forward validation
+        run: |
+          OLD_UNDERLYING="$(find data/old_underlying -type f -name 'nifty50_ohlc.csv' -print -quit)"
+          test -n "${OLD_UNDERLYING}"
+          python scripts/phase8_volatility_conditional.py \
+            --old-iv-root data/old_iv \
+            --new-iv-root data/phase8/iv \
+            --old-underlying "${OLD_UNDERLYING}" \
+            --new-underlying data/phase4a/external/nifty_index/nifty50_ohlc.csv \
+            --forward-start 2026-05-15 \
+            --output data/phase8/report
+
+      - name: Validate Phase 8 decision gate
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("data/phase8/report/PHASE8_VOLATILITY_CONDITIONAL_REPORT.json").read_text())
+          assert r["status"]=="PASS", r
+          assert r["data"]["fresh_forward_holdout"] is True
+          assert r["data"]["forward_eval_rows"] >= 30
+          assert r["decision"]["promotable_candidates"] == [] or len(r["decision"]["promotable_candidates"]) >= 1
+          print("PHASE8_VOLATILITY_CONDITIONAL: PASS")
+          print("Forward volatility AUC:", r["forward_volatility_prediction"]["auc"])
+          print("Promotable candidates:", r["decision"]["promotable_candidates"])
+          print(json.dumps(r["forward_cost_sensitivity"]["20"], indent=2))
+          print(json.dumps(r["development_cpcv"]["20"]["candidate_summaries"], indent=2))
+          PY
+
+      - name: Upload Phase 8 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8-volatility-forward-${{ github.sha }}
+          path: data/phase8/report/
+          if-no-files-found: error
+          retention-days: 90
