@@ -60,6 +60,8 @@ jobs:
 
   acquire-year:
     name: "Acquire ${{ matrix.year }}"
+    needs: legacy-smoke
+    if: ${{ needs.legacy-smoke.result == 'success' || matrix.year >= 2025 }}
     runs-on: ubuntu-latest
     strategy:
       fail-fast: false
