@@ -139,7 +139,7 @@ def build_daily_curve(obs: pd.DataFrame, decision_dates: pd.Series) -> pd.DataFr
     valid = valid.drop_duplicates(["tenor_days", "available_date"], keep="last")
 
     rows = []
-    for d in sorted(pd.to_datetime(decision_dates).dropna().dt.normalize().unique()):
+    for d in sorted(pd.to_datetime(decision_dates["date"], errors="coerce").dropna().dt.normalize().unique()):
         dd = pd.Timestamp(d)
         by_tenor = {}
         for tenor in (91, 182, 364):
