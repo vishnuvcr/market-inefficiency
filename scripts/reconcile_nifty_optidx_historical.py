@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
-from collections import Counter, defaultdict
+from collections import Counter
 from datetime import date
 from pathlib import Path
 
@@ -14,7 +14,7 @@ KEY = ["trade_date", "expiry", "strike", "option_type"]
 REQUIRED = KEY + [
     "open", "high", "low", "close", "last_price", "settlement",
     "volume", "turnover", "open_interest", "change_in_oi",
-    "underlying_price", "lot_size", "timestamp",
+    "underlying_price", "lot_size", "available_at", "timestamp",
 ]
 
 
@@ -89,7 +89,6 @@ def main() -> None:
                 file_errors.append({"file": str(p), "missing_columns": missing})
                 continue
             df["_source_file"] = p.name
-            df["_artifact"] = p.parts[-3] if len(p.parts) >= 3 else ""
             frames.append(df)
         except Exception as exc:
             file_errors.append({"file": str(p), "error": f"{type(exc).__name__}: {exc}"})
@@ -98,15 +97,17 @@ def main() -> None:
         raise SystemExit("No normalized CSV files found")
 
     x = pd.concat(frames, ignore_index=True)
-    for c in ["trade_date", "expiry"]:
+    for c in ["trade_date", "expiry", "available_at", "timestamp"]:
         x[c] = pd.to_datetime(x[c], errors="coerce")
-    for c in ["strike", "open", "high", "low", "close", "last_price",
-              "settlement", "volume", "turnover", "open_interest",
-              "change_in_oi", "underlying_price", "lot_size"]:
+    for c in [
+        "strike", "open", "high", "low", "close", "last_price",
+        "settlement", "volume", "turnover", "open_interest",
+        "change_in_oi", "underlying_price", "lot_size",
+    ]:
         x[c] = pd.to_numeric(x[c], errors="coerce")
 
     duplicate_keys = int(x.duplicated(KEY).sum())
-    file_dates = set(pd.to_datetime(x["trade_date"], errors="coerce").dt.date.dropna())
+    file_dates = set(x["trade_date"].dt.date.dropna())
     missing_normalized_dates = sorted(validated_dates - file_dates)
     unexpected_normalized_dates = sorted(file_dates - validated_dates)
 
@@ -115,6 +116,10 @@ def main() -> None:
 
     legacy = x[x["trade_date"] < "2024-07-08"]
     udiff = x[x["trade_date"] >= "2024-07-08"]
+
+    available_at_missing = int(x["available_at"].isna().sum())
+    available_at_before_trade = int((x["available_at"] < x["trade_date"]).fillna(False).sum())
+    available_at_present_pct = float(x["available_at"].notna().mean() * 100)
 
     checks = {
         "manifest_count": len(manifests),
@@ -144,6 +149,9 @@ def main() -> None:
         "udiff_missing_underlying_pct": float(udiff["underlying_price"].isna().mean() * 100) if len(udiff) else None,
         "legacy_missing_lot_size_pct": float(legacy["lot_size"].isna().mean() * 100) if len(legacy) else None,
         "udiff_missing_lot_size_pct": float(udiff["lot_size"].isna().mean() * 100) if len(udiff) else None,
+        "available_at_present_pct": available_at_present_pct,
+        "available_at_missing_rows": available_at_missing,
+        "available_at_before_trade_rows": available_at_before_trade,
         "zero_volume_rows": int((x["volume"] == 0).sum()),
         "zero_open_interest_rows": int((x["open_interest"] == 0).sum()),
         "negative_price_rows": int((x[["open","high","low","close","last_price","settlement"]] < 0).any(axis=1).sum()),
@@ -160,13 +168,12 @@ def main() -> None:
         "missing_year_manifests", "unexpected_year_manifests", "duplicate_contract_keys",
         "file_errors", "route_errors", "missing_normalized_dates",
         "unexpected_normalized_dates", "negative_price_rows",
-        "expiry_before_trade", "nonpositive_strike"
+        "expiry_before_trade", "nonpositive_strike", "available_at_missing_rows",
+        "available_at_before_trade_rows",
     ]:
         if checks[k]:
             hard_failures[k] = checks[k]
 
-    # Missing weekday archives are reported, not automatically failed: NSE holidays
-    # must be reconciled against an authoritative trading calendar before judging gaps.
     result = {
         "status": "PASS" if not hard_failures else "FAIL",
         "scope": "Phase 4A NIFTY OPTIDX historical reconciliation",
@@ -175,7 +182,8 @@ def main() -> None:
         "interpretation": {
             "weekday_no_archive_days": "reported for calendar reconciliation; not treated as errors",
             "legacy_last_price": "NA is preserved when the legacy source lacks LTP; no CLOSE substitution",
-            "pit_status": "available_at remains a conservative EOD assumption and requires final PIT audit before hypothesis testing",
+            "available_at": "required for PIT gating; current value is a conservative EOD availability assumption and is not yet independently verified against NSE publication timing",
+            "pit_status": "reconciliation PASS does not constitute final PIT validation; lot-size history, underlying availability and risk-free inputs still require source-level audit",
         },
     }
 
