@@ -134,26 +134,44 @@ def main() -> int:
         x["rf_y182"] = x["date_key"].map(rf["yield_pct_182"])
         x["rf_y364"] = x["date_key"].map(rf["yield_pct_364"])
 
-        x = x.merge(
-            lot[
-                [
-                    "contract_id", "effective_from", "effective_to",
-                    "lot_size", "available_at", "source_version",
-                ]
-            ].rename(
-                columns={
-                    "available_at": "lot_available_at",
-                    "lot_size": "master_lot_size",
-                }
-            ),
-            on="contract_id",
-            how="left",
+        # Interval join without Cartesian inflation: a contract may have
+        # multiple lot-size intervals, so merge on contract_id first, then
+        # retain exactly the interval containing the observation date.
+        x["_row_id"] = range(len(x))
+        lot_cols = lot[
+            [
+                "contract_id", "effective_from", "effective_to",
+                "lot_size", "available_at", "source_version",
+            ]
+        ].rename(
+            columns={
+                "available_at": "lot_available_at",
+                "lot_size": "master_lot_size",
+            }
+        )
+        merged = x[["_row_id", "contract_id", "trade_date"]].merge(
+            lot_cols, on="contract_id", how="left"
         )
         match = (
-            x["trade_date"].ge(x["effective_from"])
-            & x["trade_date"].le(x["effective_to"])
+            merged["trade_date"].ge(merged["effective_from"])
+            & merged["trade_date"].le(merged["effective_to"])
         )
-        x.loc[~match, ["master_lot_size", "lot_available_at", "source_version"]] = pd.NA
+        matched = merged.loc[match].copy()
+        overlap_counts = matched.groupby("_row_id").size()
+        if (overlap_counts > 1).any():
+            bad = overlap_counts[overlap_counts > 1].head().to_dict()
+            raise SystemExit(f"Lot master has overlapping intervals for option rows: {bad}")
+        matched = matched.drop_duplicates("_row_id")
+        x = x.merge(
+            matched[
+                [
+                    "_row_id", "master_lot_size", "lot_available_at",
+                    "source_version",
+                ]
+            ],
+            on="_row_id",
+            how="left",
+        )
 
         x["gap_excluded"] = x["date_key"].isin(GAP_DATES)
         x["expiry_invalid"] = x["expiry"].isna() | x["trade_date"].isna() | x["expiry"].lt(x["trade_date"])
