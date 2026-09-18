@@ -50,7 +50,9 @@ def daterange(a: date, b: date):
 def url_for(d: date) -> tuple[str, str]:
     if d >= date(2024, 7, 8):
         return ("udiff", f"{BASE}/content/fo/BhavCopy_NSE_FO_0_0_0_{d:%Y%m%d}_F_0000.csv.zip")
-    return ("legacy", f"{BASE}/content/historical/DERIVATIVES/{d:%Y}/{d:%b}".upper() + f"/fo{d:%d%b%Y}".upper().replace("/FO", "/fo") + "bhav.csv.zip")
+    month = d.strftime("%b").upper()
+    filename = f"fo{d:%d}{month}{d:%Y}bhav.csv.zip"
+    return ("legacy", f"{BASE}/content/historical/DERIVATIVES/{d:%Y}/{month}/{filename}")
 
 
 def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
