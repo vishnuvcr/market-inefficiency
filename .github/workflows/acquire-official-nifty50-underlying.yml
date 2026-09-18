@@ -1,0 +1,96 @@
+name: Acquire official NIFTY 50 underlying PIT input
+
+on:
+  pull_request:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - "scripts/acquire_official_nifty50.py"
+      - ".github/workflows/acquire-official-nifty50-underlying.yml"
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Inclusive date YYYY-MM-DD"
+        required: true
+        default: "2020-04-13"
+      end:
+        description: "Inclusive date YYYY-MM-DD"
+        required: true
+        default: "2026-05-14"
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    concurrency:
+      group: official-nifty50-underlying
+      cancel-in-progress: false
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.pull_request.head.ref || 'research/v1.0-protocol' }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas requests
+
+      - name: Acquire official NIFTY 50 history
+        env:
+          START_DATE: ${{ inputs.start || '2020-04-13' }}
+          END_DATE: ${{ inputs.end || '2026-05-14' }}
+        run: |
+          python scripts/acquire_official_nifty50.py \
+            --start "$START_DATE" \
+            --end "$END_DATE"
+
+      - name: Validate official PIT input
+        env:
+          START_DATE: ${{ inputs.start || '2020-04-13' }}
+          END_DATE: ${{ inputs.end || '2026-05-14' }}
+        run: |
+          python - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+          import pandas as pd
+
+          root = Path("data/phase4a/external/nifty50_official")
+          df = pd.read_csv(root / "nifty50_index.csv", parse_dates=["date"])
+          manifest = json.loads((root / "MANIFEST.json").read_text())
+
+          start = pd.Timestamp(os.environ["START_DATE"])
+          end = pd.Timestamp(os.environ["END_DATE"])
+
+          assert manifest["status"] == "PASS", manifest
+          assert len(df) > 0
+          assert df["date"].min() <= start
+          assert df["date"].max() >= end
+          assert df["date"].is_unique
+          assert df["close"].notna().all()
+          assert (df["close"] > 0).all()
+          assert df["available_at"].notna().all()
+          assert (df["source"] == "NSE Indices Historical Index Data").all()
+
+          # Trading-calendar days are allowed to be absent; the underlying
+          # dataset is compared to the option-date mask downstream.
+          print("Official NIFTY 50 PIT input validation PASS")
+          print("rows =", len(df))
+          print("first =", df["date"].min().date())
+          print("last  =", df["date"].max().date())
+          print("sha256 =", manifest["csv_sha256"])
+          PY
+
+      - name: Upload immutable underlying artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-official-nifty50-underlying-${{ github.sha }}
+          path: data/phase4a/external/nifty50_official/
+          if-no-files-found: error
+          retention-days: 90
