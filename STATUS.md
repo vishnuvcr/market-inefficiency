@@ -68,7 +68,7 @@ The acquisition workflow now has a dedicated reconciliation script and workflow.
 
 The reconciliation workflow was added to the research branch and the protocol PR was merged into `main` so the workflow is eligible for GitHub's `workflow_run` event. It also now runs on research-branch updates and automatically selects the latest successful acquisition run when no explicit run ID is supplied, avoiding another market-data download.
 
-Full reconciliation Run #3 (GitHub Actions run `35374383806`, commit `2d2a684f2d7498cbbfefbe406a6fb06e00dc6e6f`) completed successfully against immutable Acquisition Run #17 (`35355477098`). The reconciliation report passed all hard gates: 7/7 year manifests present, 1,511 validated archive days, 1,511 normalized files/dates, 2,859,228 normalized rows, zero duplicate contract keys, zero file errors, zero route errors, zero missing/unexpected normalized dates, zero negative prices, zero expiry-before-trade rows, zero non-positive strikes, zero missing `available_at` rows, and zero `available_at)-before-trade rows. The report also records 85 weekday no-archive dates for authoritative calendar reconciliation.
+Full reconciliation Run #3 (GitHub Actions run `35374383806`, commit `2d2a684f2d7498cbbfefbe406a6fb06e00dc6e6f`) completed successfully against immutable Acquisition Run #17 (`35355477098`). The reconciliation report passed all hard gates: 7/7 year manifests present, 1,511 validated archive days, 1,511 normalized files/dates, 2,859,228 normalized rows, zero duplicate contract keys, zero file errors, zero route errors, zero missing/unexpected normalized dates, zero negative prices, zero expiry-before-trade rows, zero non-positive strikes, zero missing `available_at` rows, and zero `available_at)-before-trade rows. The report also records 85 weekday no-archive dates. Calendar audit work now classifies these explicitly; 2021-03-30 is a documented trading-day archive gap rather than a holiday and remains a coverage gap requiring exclusion or separate sourcing.
 
 The previous Run #2 failure was a timezone-comparison implementation error rather than a data-quality failure: `available_at` was timezone-aware while `trade_date` was timezone-naive. The reconciler now compares their calendar dates for the current PIT gate.
 
@@ -87,7 +87,7 @@ Weekday no-archive dates are reported rather than automatically failed because a
 
 ## Immediate next gates
 
-1. Reconcile the 85 weekday no-archive dates against authoritative NSE F&O trading-holiday calendars.
+1. Complete the automated calendar-gap audit and preserve the 2021-03-30 trading-day archive gap explicitly.
 2. Complete the PIT audit for `available_at` publication timing and source-level availability assumptions.
 3. Audit lot-size history, underlying-price availability and risk-free inputs.
 4. Freeze the normalized option-EOD research snapshot only after the reconciliation/PIT gates pass.
