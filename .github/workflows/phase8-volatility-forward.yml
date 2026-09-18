@@ -18,6 +18,9 @@ on:
       - scripts/reconstruct_phase4b_iv.py
       - .github/workflows/phase8-volatility-forward.yml
   workflow_dispatch:
+  pull_request:
+    branches:
+      - research/v1.0-protocol
 
 permissions:
   actions: read
