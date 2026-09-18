@@ -48,6 +48,9 @@ jobs:
       - name: Test Phase 3.1 stylized-fact diagnostics
         run: python scripts/test_phase3_stylized_facts.py
 
+      - name: Test Phase 3.2 realized-volatility diagnostics
+        run: python scripts/test_phase3_realized_volatility.py
+
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
