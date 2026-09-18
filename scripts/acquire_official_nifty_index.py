@@ -16,8 +16,8 @@ from pathlib import Path
 
 import requests
 
-URL = "https://www.niftyindices.com/Backpage.aspx/getHistoricaldatatabletoString"
-BOOTSTRAP_URL = "https://www.niftyindices.com/reports"
+URL = "https://www.nseindia.com/api/historicalOR/indicesHistory"
+BOOTSTRAP_URL = "https://www.nseindia.com/reports-indices-historical-index-data"
 HEADERS = {
     "Accept": "application/json, text/javascript, */*; q=0.01",
     "Content-Type": "application/json; charset=UTF-8",
@@ -49,29 +49,71 @@ def main() -> None:
     out = Path(args.output)
     out.mkdir(parents=True, exist_ok=True)
 
-    start = datetime.strptime(args.start, "%Y-%m-%d").strftime("%d-%b-%Y")
-    end = datetime.strptime(args.end, "%Y-%m-%d").strftime("%d-%b-%Y")
-    cinfo = (
-        "{"
-        f"'name':'NIFTY 50','startDate':'{start}',"
-        f"'endDate':'{end}','indexName':'NIFTY 50'"
-        "}"
-    )
+    start_dt = datetime.strptime(args.start, "%Y-%m-%d")
+    end_dt = datetime.strptime(args.end, "%Y-%m-%d")
 
     session = requests.Session()
-    session.headers.update({"User-Agent": HEADERS["User-Agent"]})
+    session.headers.update({
+        "User-Agent": HEADERS["User-Agent"],
+        "Accept": "application/json, text/plain, */*",
+        "Referer": BOOTSTRAP_URL,
+        "Origin": "https://www.nseindia.com",
+        "X-Requested-With": "XMLHttpRequest",
+    })
 
-    bootstrap = session.get(
-        BOOTSTRAP_URL,
-        headers={
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
-            "Referer": "https://www.niftyindices.com/",
-            "User-Agent": HEADERS["User-Agent"],
-        },
-        timeout=30,
-    )
+    bootstrap = session.get(BOOTSTRAP_URL, timeout=20)
     bootstrap.raise_for_status()
 
+    rows = []
+    # NSE's official historical-index endpoint accepts date-bounded requests.
+    # Use yearly chunks to keep requests bounded and reproducible.
+    cur = start_dt
+    while cur <= end_dt:
+        chunk_end = min(end_dt, datetime(cur.year, 12, 31))
+        params = {
+            "indexType": "NIFTY 50",
+            "from": cur.strftime("%d-%m-%Y"),
+            "to": chunk_end.strftime("%d-%m-%Y"),
+        }
+        response = session.get(URL, params=params, timeout=60)
+        response.raise_for_status()
+        payload = response.json()
+        chunk_rows = payload.get("data", payload if isinstance(payload, list) else [])
+        if not chunk_rows:
+            raise SystemExit(
+                f"NSE official historical index endpoint returned no rows for "
+                f"{cur:%Y-%m-%d}..{chunk_end:%Y-%m-%d}; keys={list(payload) if isinstance(payload, dict) else 'list'}"
+            )
+        rows.extend(chunk_rows)
+        cur = chunk_end + __import__("datetime").timedelta(days=1)
+
+    if not rows:
+        raise SystemExit("NSE official historical index endpoint returned no rows")
+
+    # Normalize the NSE endpoint's field names into the Phase 4A schema.
+    normalized = []
+    for row in rows:
+        date_value = row.get("EOD_TIMESTAMP") or row.get("CH_TIMESTAMP") or row.get("TIMESTAMP")
+        close = row.get("EOD_CLOSE_INDEX_VAL") or row.get("CLOSE_INDEX_VAL") or row.get("CLOSE")
+        op = row.get("EOD_OPEN_INDEX_VAL") or row.get("OPEN_INDEX_VAL") or row.get("OPEN")
+        hi = row.get("EOD_HIGH_INDEX_VAL") or row.get("HIGH_INDEX_VAL") or row.get("HIGH")
+        lo = row.get("EOD_LOW_INDEX_VAL") or row.get("LOW_INDEX_VAL") or row.get("LOW")
+        if date_value is None or close is None:
+            continue
+        normalized.append({
+            "date": date_value,
+            "open": op,
+            "high": hi,
+            "low": lo,
+            "close": close,
+        })
+
+    if not normalized:
+        raise SystemExit(
+            f"NSE historical index response fields not recognized; sample keys={sorted(rows[0].keys())}"
+        )
+
+    rows = normalized
     response = session.post(
         URL,
         headers=HEADERS,
