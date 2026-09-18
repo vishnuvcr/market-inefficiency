@@ -144,8 +144,8 @@ def summarize(df: pd.DataFrame, horizon: int) -> dict:
     return {
         "horizon_days": int(horizon),
         "n": int(len(x)),
-        "coverage_start": x["trade_date"].min() if len(x) else None,
-        "coverage_end": x["trade_date"].max() if len(x) else None,
+        "coverage_start": x["trade_date"].min().strftime("%Y-%m-%d") if len(x) else None,
+        "coverage_end": x["trade_date"].max().strftime("%Y-%m-%d") if len(x) else None,
         "variance_risk_premium": base,
         "volatility_difference": vol_diff,
     }
