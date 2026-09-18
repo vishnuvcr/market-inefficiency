@@ -1,5 +1,9 @@
 name: Phase 8 — fresh-forward volatility strategy validation
 
+concurrency:
+  group: phase8-volatility-forward
+  cancel-in-progress: true
+
 on:
   push:
     branches:
