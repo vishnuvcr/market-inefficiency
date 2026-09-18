@@ -1,6 +1,7 @@
 rule_id,scope,effective_rule,lot_size,source
+LOT_2020,NIFTY,"2020 review retained NIFTY lot size at 75",75,https://nsearchives.nseindia.com/content/circulars/FAOP44039.pdf
 LOT_2021A,NIFTY monthly/weekly,"May and June 2021 monthly expiries retain 75; July 2021 monthly expiry and beyond use 50",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
-LOT_2021B,NIFTY weekly,"August 2021 weekly expiry and beyond use 50",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2021B,NIFTY weekly,"August 2021 weekly expiry and beyond use 50; July 2021 weekly expiries remain under the pre-revision 75 regime",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
 LOT_2021C,NIFTY long-term options,"Existing NIFTY long-term options (>3 months) revised from 75 to 50 after June 25 2021 expiry",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
 LOT_2023,NIFTY expiries,"2023 review retained 50",50,https://archives.nseindia.com/content/circulars/FAOP56233.pdf
 LOT_2024A,NIFTY all contracts,"April 25 2024 monthly expiry remains 50; all NIFTY contracts available for trading from April 26 2024 onward use 25",25,https://nsearchives.nseindia.com/content/circulars/FAOP61415.pdf
