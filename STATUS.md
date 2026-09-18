@@ -4,11 +4,11 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 7 — Statistical validation of the broad prediction/strategy screen**
+**Phase 8 — Fresh-forward volatility validation**
 
-Status: **PHASE 4 PIT/IV/VRP/SURFACE TESTS PASSED; PHASE 5 BROAD PREDICTION COMPLETED; PHASE 6 STRATEGY SCREEN COMPLETED; PHASE 7 CPCV/PBO/DSR DIAGNOSTICS COMPLETED**
+Status: **PHASE 4 PIT/IV/VRP/SURFACE TESTS PASSED; PHASE 5 BROAD PREDICTION COMPLETED; PHASE 6 STRATEGY SCREEN COMPLETED; PHASE 7 CPCV/PBO/DSR COMPLETED; PHASE 8B FRESH-FORWARD UNDERLYING-ONLY TEST COMPLETED**
 
-The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
+The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout. The first fresh-forward test of the volatility-expansion signal using only price+volatility information produced AUC 0.558 on 87 clean forward observations, and none of three fixed volatility-conditioned strategy families passed the 20-bps promotion gate or development CPCV. The multimodal Phase 5 signal therefore should not be treated as a generic price/volatility effect; the option-surface contribution remains the key unresolved branch.
 
 ## Phase tracker
 
@@ -21,8 +21,8 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 4. Option-market hypotheses | 🟢 Formal PIT/IV + VRP + H-A2/H-B1/H-C1 gates passed | 85% | Economic/execution validation and multiplicity controls |
 | 5. Multimodal prediction | 🟢 Completed | 100% | Direct direction rejected; volatility-expansion signal retained for further study |
 | 6. Strategy translation | 🟡 Candidate screen completed | 60% | Translate volatility-state prediction into independently validated strategy families |
-| 7. Statistical validation | 🟢 Current candidate stress-tested | 70% | Current inverse-direction candidate rejected for promotion; next branch must be re-specified |
-| 8. Paper trading | ⚪ Not started | 0% | Post-validation only |
+| 7. Statistical validation | 🟢 Current candidate stress-tested | 100% | Inverse-direction candidate rejected; 28-path CPCV/PBO/DSR diagnostics complete |
+| 8. Fresh-forward validation | 🟡 Underlying-only branch completed; full multimodal branch pending | 35% | Full fresh-forward option-surface validation remains before any promotion |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Validated Phase 3 snapshot
