@@ -83,7 +83,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
     if route == "legacy":
         candidate_urls.append((url.replace(BASE, FALLBACK_BASE, 1), "nse-fallback"))
         month_num = d.strftime("%m")
-        filename = f"fo{d:%d}{d:%b}".upper() + f"{d:%Y}bhav.csv.zip"
+        filename = "fo" + f"{d:%d}{d:%b}".upper() + f"{d:%Y}bhav.csv.zip"
         mirror_url = f"{MIRROR_BASE}/{d:%Y}/{month_num}/{filename}"
         candidate_urls.append((mirror_url, "secondary-mirror"))
     rec = {
