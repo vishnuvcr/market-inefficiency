@@ -18,6 +18,46 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  legacy-smoke:
+    name: "Legacy source smoke test"
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check requests pandas
+
+      - name: Acquire one known legacy session
+        run: |
+          rm -rf data/nse_option_snapshot
+          python scripts/acquire_nse_nifty_optidx.py \
+            --start 2020-04-13 \
+            --end 2020-04-13 \
+            --workers 1 \
+            --retries 1 \
+            --delay-seconds 1.25
+
+      - name: Verify smoke artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("data/nse_option_snapshot/MANIFEST.json").read_text())
+          assert m["validated_days"] == 1, m
+          assert m["error_days"] == 0, m
+          rec=m["records"][0]
+          print("Smoke PASS")
+          print("source_tier =", rec.get("source_tier"))
+          print("source_attempts =", json.dumps(rec.get("source_attempts", []), indent=2))
+          print("nifty_option_rows =", rec.get("nifty_option_rows"))
+          PY
+
   acquire-year:
     name: "Acquire ${{ matrix.year }}"
     runs-on: ubuntu-latest
@@ -37,17 +77,6 @@ jobs:
 
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check requests pandas
-
-      - name: Preflight legacy mirror
-        if: matrix.year == 2020
-        run: |
-          python - <<'PY'
-          import requests
-          url = "https://raw.githubusercontent.com/SantoshSrinivas79/NSE-FNO-Data-bank/main/data/2020/04/fo13APR2020bhav.csv.zip"
-          r = requests.get(url, timeout=30, stream=True)
-          print("legacy mirror preflight:", r.status_code, url)
-          r.raise_for_status()
-          PY
 
       - name: Resolve partition dates
         id: dates
