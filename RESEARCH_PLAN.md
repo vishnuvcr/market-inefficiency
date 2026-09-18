@@ -107,10 +107,12 @@ Status: **candidate screen complete**. A six-rule NIFTY settlement proxy was tes
 
 Status: **current candidate stress-test complete**. 28-path CPCV, CSCV-style PBO and an approximate DSR diagnostic were run on the first 90%, with the Phase 6 final 10% held untouched.
 
-### Phase 8 — Paper-trading validation
-**Goal:** compare research assumptions with live market behavior without capital risk.
+### Phase 8 — Fresh-forward validation / paper-trading readiness
+**Goal:** test the strongest surviving prediction on later data before any paper-trading decision.
 
-Status: 0%.
+Status: **35% — Phase 8B underlying-only fresh-forward branch completed; full multimodal fresh-forward option branch remains pending.**
+
+Phase 8B result: the frozen Phase 5 price+volatility specification produced forward AUC **0.5580** on **87** clean observations from 2026-05-15 to 2026-09-17. Three fixed volatility-conditioned strategy families all failed the predeclared 20-bps promotion gate and had negative development CPCV medians. See `docs/PHASE8B_RESULTS.md`.
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
@@ -142,7 +144,7 @@ Each phase produces machine-readable outputs plus a human-readable report. Requi
 
 ## Current research decision
 
-The broad hypothesis remains open, but the first direct-direction predictive strategy is not supported. The current candidate fails development-period CPCV robustness despite a modest positive final-holdout settlement proxy at low assumed costs. The stronger remaining predictive target is future volatility expansion, which should now be translated into independently specified volatility-sensitive strategy families. The option-surface skew signal remains a separate branch.
+The broad hypothesis remains open. Direct next-day direction is not supported. The first genuinely later fresh-forward test of a reduced underlying-only volatility-state specification is also not supported: AUC 0.558 over 87 clean forward observations, with all three fixed strategy families failing the 20-bps promotion gate and negative development CPCV medians. The remaining high-value research question is whether the historical multimodal volatility signal survives when fresh option-surface information is included. No strategy should move to paper trading until that branch passes the same robustness and cost gates.
 
 ## Current baseline decision
 
