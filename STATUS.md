@@ -6,7 +6,7 @@ Last updated: 2026-09-18
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A — NIFTY OPTIDX DATA ACQUISITION PASSED; CROSS-YEAR RECONCILIATION / PIT AUDIT IN PROGRESS**
+Status: **PHASE 4A — NIFTY OPTIDX ACQUISITION + RECONCILIATION PASSED; PIT INPUT AUDIT BLOCKED PENDING EXTERNAL INPUTS**
 
 Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
@@ -85,11 +85,19 @@ These are partial checks only; they do **not** replace the full 2020–2026 GitH
 
 Weekday no-archive dates are reported rather than automatically failed because authoritative NSE holiday/calendar reconciliation is still required. The PIT audit will review the conservative EOD `available_at` assumption before any forward-looking hypothesis test.
 
+## PIT input audit
+
+`docs/PHASE4A_PIT_AUDIT.md` and `data/phase4a/pit_input_registry.csv` now freeze the remaining PIT requirements. The structural EOD reconciliation is passed, but the formal IV/VRP dataset is not yet frozen because legacy underlying values and historical contract-level lot sizes require independent PIT sources, and the risk-free interpolation/availability rule is not yet frozen. NSE documents EOD generation once per trading day, which supports an EOD convention but does not establish an exact publication timestamp. UDiFF contains `UndrlygPric` and `NewBrdLotQty`; legacy rows preserve these fields as NA rather than inferred substitutions. citeturn0search0turn0search2
+
+Official NSE lot-size provenance now covers the main NIFTY transitions: 75 to 50 for July 2021 contracts, 50 retained in 2023, 50 to 25 from April 26, 2024 contracts, and 25 to 75 for new contracts introduced from November 20, 2024. Contract-level transition rules mean lot size must be joined by contract/expiry, not merely by trade date. citeturn3search43turn3search42turn4search0turn3search45
+
+RBI documents 91-day Treasury Bills as short-term Government instruments and publishes auction cut-off yields. These are a candidate risk-free source, but publication timing and the interpolation/carry-forward rule must be frozen before use in a PIT feature. citeturn5search3turn5search0
+
 ## Immediate next gates
 
-1. Complete the automated calendar-gap audit and preserve the 2021-03-30 trading-day archive gap explicitly.
-2. Complete the PIT audit for `available_at` publication timing and source-level availability assumptions.
-3. Audit lot-size history, underlying-price availability and risk-free inputs.
-4. Freeze the normalized option-EOD research snapshot only after the reconciliation/PIT gates pass.
-5. Add point-in-time lot-size and risk-free inputs.
-6. Begin Phase 4B implied-volatility/surface reconstruction.
+1. Acquire/validate a contract-level historical NIFTY lot-size master covering all included expiries.
+2. Acquire/validate a PIT underlying/index close series for legacy option rows before 2024-07-08.
+3. Freeze a PIT risk-free curve source and availability/interpolation rule.
+4. Convert the 2021-03-30 trading-day archive gap into an explicit exclusion mask unless independently sourced.
+5. Freeze the normalized option-EOD research snapshot and included-contract/date manifest.
+6. Begin Phase 4B implied-volatility/surface reconstruction only after the PIT input gate passes.
