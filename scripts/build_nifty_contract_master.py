@@ -42,6 +42,8 @@ def legacy_rule(trade_date: date, expiry: date) -> tuple[int, str, str]:
         date(2021, 7, 15),
         date(2021, 7, 22),
     }
+    if trade_date < date(2021, 4, 30):
+        return 75, "NSE_FAOP44039", "2020-03-31"
     if trade_date <= date(2021, 6, 25):
         return 75, "NSE_FAOP47854", "2021-03-31"
     if expiry in july_weekly:
