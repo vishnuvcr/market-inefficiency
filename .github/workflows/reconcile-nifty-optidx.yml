@@ -90,6 +90,12 @@ jobs:
             --registry data/phase4a/nse_fno_gap_audit.csv \
             --output PHASE4A_CALENDAR_AUDIT.json
 
+      - name: Build contract-level NIFTY lot-size master
+        run: |
+          python scripts/build_nifty_contract_master.py \\
+            --normalized-dir data/phase4a_artifacts \\
+            --output data/phase4a/NIFTY_CONTRACT_MASTER.csv
+
       - name: Upload reconciliation report
         uses: actions/upload-artifact@v4
         with:
