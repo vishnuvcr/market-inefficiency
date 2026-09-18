@@ -98,6 +98,9 @@ def process_file(path: Path) -> pd.DataFrame:
     df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
     df["lot_size"] = pd.to_numeric(df["lot_size"], errors="coerce")
     df["option_type"] = df["option_type"].astype("string").str.strip().str.upper()
+    df["source_version"] = pd.Series(pd.NA, index=df.index, dtype="string")
+    if "available_at" not in df.columns:
+        df["available_at"] = pd.Series(pd.NA, index=df.index, dtype="string")
     df = df[
         df["trade_date"].notna()
         & df["expiry"].notna()
@@ -114,8 +117,6 @@ def process_file(path: Path) -> pd.DataFrame:
     observed = ~legacy
     df.loc[observed, "lot_size"] = df.loc[observed, "lot_size"].astype("int64")
     df.loc[observed, "source_version"] = "NSE_UDIFF_NewBrdLotQty"
-    if "available_at" not in df.columns:
-        df["available_at"] = pd.NA
     df.loc[observed & df["available_at"].isna(), "available_at"] = (
         df.loc[observed & df["available_at"].isna(), "trade_date"]
         .dt.tz_localize("Asia/Kolkata")
