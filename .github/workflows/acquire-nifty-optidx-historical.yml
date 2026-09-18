@@ -2,13 +2,6 @@ name: Acquire historical NIFTY OPTIDX EOD partitions
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - research/v1.0-protocol
-    paths:
-      - "scripts/acquire_nse_nifty_optidx.py"
-      - "scripts/validate_nse_nifty_optidx_snapshot.py"
-      - ".github/workflows/acquire-nifty-optidx-historical.yml"
 
 permissions:
   contents: read
@@ -49,6 +42,8 @@ jobs:
           y=int(os.environ["YEAR"])
           start=date(y,1,1)
           end=date(y,12,31)
+          if y==2020:
+              start=date(2020,4,13)
           if y==2026:
               end=date(2026,5,14)
           print("start="+start.isoformat())
