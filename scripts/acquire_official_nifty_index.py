@@ -11,6 +11,7 @@ import argparse
 import csv
 import hashlib
 import json
+import time
 from datetime import datetime, timedelta, timezone
 from pathlib import Path
 
@@ -22,6 +23,7 @@ UA = (
     "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 "
     "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
 )
+CHUNK_DAYS = 60
 
 
 def sha256(path: Path) -> str:
@@ -63,9 +65,10 @@ def main() -> None:
 
     rows = []
     raw_files = []
+    chunk_audits = []
     cur = start
     while cur <= end:
-        chunk_end = min(end, datetime(cur.year, 12, 31))
+        chunk_end = min(end, cur + timedelta(days=CHUNK_DAYS - 1))
         params = {
             "indexType": "NIFTY 50",
             "from": cur.strftime("%d-%m-%Y"),
@@ -82,15 +85,6 @@ def main() -> None:
                 f"content_type={response.headers.get('content-type')}"
             ) from exc
 
-        raw_path = raw_dir / f"nifty50_{cur.year}.json"
-        raw_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-        raw_files.append({
-            "file": str(raw_path),
-            "sha256": sha256(raw_path),
-            "requested_start": cur.strftime("%Y-%m-%d"),
-            "requested_end": chunk_end.strftime("%Y-%m-%d"),
-        })
-
         chunk_rows = payload.get("data", payload if isinstance(payload, list) else [])
         if not chunk_rows:
             raise SystemExit(
@@ -98,8 +92,27 @@ def main() -> None:
                 f"{cur:%Y-%m-%d}..{chunk_end:%Y-%m-%d}; "
                 f"keys={sorted(payload) if isinstance(payload, dict) else 'list'}"
             )
+
+        raw_path = raw_dir / (
+            f"nifty50_{cur:%Y%m%d}_{chunk_end:%Y%m%d}.json"
+        )
+        raw_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+        raw_files.append({
+            "file": str(raw_path),
+            "sha256": sha256(raw_path),
+            "requested_start": cur.strftime("%Y-%m-%d"),
+            "requested_end": chunk_end.strftime("%Y-%m-%d"),
+            "rows_returned": len(chunk_rows),
+        })
+        chunk_audits.append({
+            "requested_start": cur.strftime("%Y-%m-%d"),
+            "requested_end": chunk_end.strftime("%Y-%m-%d"),
+            "rows_returned": len(chunk_rows),
+        })
+
         rows.extend(chunk_rows)
         cur = chunk_end + timedelta(days=1)
+        time.sleep(0.25)
 
     normalized = []
     for row in rows:
@@ -145,6 +158,20 @@ def main() -> None:
             f"sample keys={sample_keys}"
         )
 
+    # Canonicalize dates, remove cross-chunk duplicates, and sort chronologically.
+    for row in normalized:
+        row["date"] = datetime.strptime(
+            row["date"], "%d-%b-%Y"
+        ).strftime("%Y-%m-%d")
+
+    by_date = {}
+    for row in normalized:
+        existing = by_date.get(row["date"])
+        if existing is not None and existing != row:
+            raise SystemExit(f"Conflicting duplicate NIFTY 50 row for {row['date']}")
+        by_date[row["date"]] = row
+    normalized = [by_date[d] for d in sorted(by_date)]
+
     csv_path = out / "nifty50_ohlc.csv"
     with csv_path.open("w", newline="", encoding="utf-8") as f:
         writer = csv.DictWriter(
@@ -161,8 +188,10 @@ def main() -> None:
         "index": "NIFTY 50",
         "requested_period": [args.start, args.end],
         "retrieved_at_utc": datetime.now(timezone.utc).isoformat(),
+        "chunk_days": CHUNK_DAYS,
         "rows": len(normalized),
         "raw_files": raw_files,
+        "chunk_audits": chunk_audits,
         "csv_sha256": sha256(csv_path),
     }
     (out / "MANIFEST.json").write_text(
