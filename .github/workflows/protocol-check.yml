@@ -48,6 +48,9 @@ jobs:
         run: python scripts/test_phase3_jump_diagnostics.py
       - name: Test Phase 3.5 memory/dependence diagnostics
         run: python scripts/test_phase3_memory_dependence.py
+
+      - name: Test Phase 3.6 descriptive regime segmentation
+        run: python scripts/test_phase3_regime_segmentation.py
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
