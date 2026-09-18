@@ -119,6 +119,12 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                         rec["source_tier"] = source_tier
                         break
                     last_error = f"{source_tier}: HTTP {rr.status_code}"
+                    # A 404 means this date has no archive on the official
+                    # archive route. Do not waste time probing equivalent hosts.
+                    if rr.status_code == 404:
+                        rec["status"] = "NO_ARCHIVE"
+                        rec["source_tier"] = "none"
+                        return rec
                 except requests.RequestException as exc:
                     attempt_record = {"source_tier": source_tier, "url": candidate,
                                        "error": f"{type(exc).__name__}: {exc}"}
@@ -259,8 +265,8 @@ def main() -> None:
     ap.add_argument("--end", default="2026-05-14")
     ap.add_argument("--output", default="data/nse_option_snapshot")
     ap.add_argument("--workers", type=int, default=2)
-    ap.add_argument("--retries", type=int, default=4)
-    ap.add_argument("--delay-seconds", type=float, default=1.25,
+    ap.add_argument("--retries", type=int, default=2)
+    ap.add_argument("--delay-seconds", type=float, default=0.30,
                     help="Minimum delay between NSE archive HTTP requests in this process.")
     args = ap.parse_args()
 
@@ -269,7 +275,9 @@ def main() -> None:
     raw_dir.mkdir(parents=True, exist_ok=True)
     norm_dir.mkdir(parents=True, exist_ok=True)
 
-    dates = list(daterange(date.fromisoformat(args.start), date.fromisoformat(args.end)))
+    # Weekends are never archive candidates; excluding them cuts request volume
+    # roughly in half without changing the trading-session dataset.
+    dates = [d for d in daterange(date.fromisoformat(args.start), date.fromisoformat(args.end)) if d.weekday() < 5]
     records = []
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
         futs = {ex.submit(fetch_one, d, raw_dir, norm_dir, args.retries, args.delay_seconds): d for d in dates}
