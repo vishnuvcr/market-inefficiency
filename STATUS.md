@@ -60,13 +60,12 @@ Implemented:
 
 The acquisition layer preserves original ZIP files, validates schemas, extracts NIFTY CE/PE rows, normalizes common fields, records SHA-256 hashes and creates an immutable snapshot manifest. Legacy and UDiFF formats are explicitly handled separately rather than silently assumed identical.
 
-The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. The historical build is now partitioned by calendar year to keep artifacts reproducible and bounded.
+The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. The historical build is now partitioned by calendar year to keep artifacts reproducible and bounded. The first historical run exposed a legacy-route URL construction defect: the URL builder uppercased the complete base URL while preserving the file prefix. This has been corrected to construct the legacy NSE path with exact path casing. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build.
 
 ## Immediate next gates
 
-1. Complete the NIFTY OPTIDX pilot.
-2. Validate the legacy/UDiFF historical boundary.
-3. Measure daily coverage and NIFTY option-contract counts.
-4. Freeze the normalized option-EOD schema and snapshot.
-5. Add point-in-time lot-size and risk-free inputs.
-6. Begin Phase 4B implied-volatility/surface reconstruction.
+1. Rerun and complete the corrected 2020–2026 historical partitions.
+2. Reconcile validated days, no-archive days and daily NIFTY contract counts.
+3. Validate the legacy/UDiFF historical boundary and freeze the normalized option-EOD snapshot.
+4. Add point-in-time lot-size and risk-free inputs.
+5. Begin Phase 4B implied-volatility/surface reconstruction.
