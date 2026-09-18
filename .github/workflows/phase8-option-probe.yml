@@ -1,0 +1,36 @@
+name: Phase 8 — NSE option archive probe
+
+on:
+  push:
+    branches:
+      - research/phase8-volatility-forward
+    paths:
+      - .github/workflows/phase8-option-probe.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v6
+      - name: Probe official NSE UDiFF option archive
+        run: |
+          python - <<'PY'
+          import requests
+          u="https://nsearchives.nseindia.com/content/fo/BhavCopy_NSE_FO_0_0_0_20260918_F_0000.csv.zip"
+          h={
+            "User-Agent":"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/149 Safari/537.36",
+            "Accept":"application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
+            "Referer":"https://www.nseindia.com/all-reports-derivatives"
+          }
+          r=requests.get(u,headers=h,timeout=25)
+          print("status",r.status_code,"bytes",len(r.content),"type",r.headers.get("content-type"))
+          assert r.status_code==200, r.status_code
+          assert len(r.content)>100000, len(r.content)
+          assert r.content[:2]==b"PK", r.content[:4]
+          print("NSE UDiFF archive probe PASS")
+          PY
