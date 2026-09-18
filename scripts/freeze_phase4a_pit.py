@@ -175,7 +175,12 @@ def main() -> int:
 
         x["gap_excluded"] = x["date_key"].isin(GAP_DATES)
         x["expiry_invalid"] = x["expiry"].isna() | x["trade_date"].isna() | x["expiry"].lt(x["trade_date"])
-        x["underlying_missing"] = x["underlying_close"].isna() | x["underlying_close"].le(0)
+        # The known archive gap is an explicit exclusion, not an external-input
+        # failure. Do not count it as missing underlying/risk-free coverage.
+        x["underlying_missing"] = (
+            (x["underlying_close"].isna() | x["underlying_close"].le(0))
+            & ~x["gap_excluded"]
+        )
         x["lot_missing"] = x["master_lot_size"].isna() | pd.to_numeric(x["master_lot_size"], errors="coerce").le(0)
 
         decision_ts = pd.to_datetime(
@@ -193,6 +198,7 @@ def main() -> int:
 
         x["risk_free_missing"] = (
             x[["rf_y91", "rf_y182", "rf_y364"]].isna().any(axis=1)
+            & ~x["gap_excluded"]
         )
 
         x["pit_join_pass"] = ~(
@@ -269,7 +275,7 @@ def main() -> int:
         "gap_exclusions": sorted(GAP_DATES),
         "pit_rules": {
             "underlying": "official NSE NIFTY 50 EOD observation",
-            "lot_master": "contract_id + effective interval + available_at <= decision timestamp",
+            "lot_master": "contract_id + unique effective interval + available_at <= decision timestamp",
             "risk_free": "RBI T-bill curve using latest auction observation available before decision date",
         },
         "input_files": source_files,
