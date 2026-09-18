@@ -90,22 +90,22 @@ Subphases:
 ### Phase 4 — Single-hypothesis model research
 **Goal:** test each mechanism independently before combining them.
 
-Status: 0%.
+Status: **complete for the current preregistered option hypotheses** — PIT IV, VRP, state dependence, jump-risk proxy and surface-shape tests were completed. The surviving evidence is descriptive/predictive rather than yet tradable.
 
-### Phase 5 — Multimodal regime switching
-**Goal:** determine whether a regime model adds information beyond single features.
+### Phase 5 — Multimodal market prediction
+**Goal:** determine whether a multimodal predictor adds useful out-of-sample information about future market behaviour.
 
-Status: 0%.
+Status: **complete for the first specification**. Direct next-day direction prediction failed to improve on baseline-like performance, while 5-session volatility-expansion classification showed the strongest useful result (holdout AUC 0.688).
 
-### Phase 6 — Portfolio construction and execution realism
-**Goal:** convert individual effects into implementable portfolios.
+### Phase 6 — Strategy translation and execution realism
+**Goal:** convert validated predictive states into fixed candidate strategies without contaminating the final holdout.
 
-Status: 0%.
+Status: **candidate screen complete**. A six-rule NIFTY settlement proxy was tested with 80/10/10 chronology. The validation-selected inverse-direction candidate was not robust under CPCV and is rejected for promotion.
 
 ### Phase 7 — Statistical validation and anti-overfitting controls
 **Goal:** establish whether any observed edge survives scientific scrutiny.
 
-Status: 0%.
+Status: **current candidate stress-test complete**. 28-path CPCV, CSCV-style PBO and an approximate DSR diagnostic were run on the first 90%, with the Phase 6 final 10% held untouched.
 
 ### Phase 8 — Paper-trading validation
 **Goal:** compare research assumptions with live market behavior without capital risk.
@@ -139,6 +139,10 @@ No stage may be skipped because an earlier result looks attractive.
 ## Deliverables
 
 Each phase produces machine-readable outputs plus a human-readable report. Required artifacts include configuration, data version, code commit, experiment IDs, performance tables, confidence intervals, diagnostic plots, and validation summaries.
+
+## Current research decision
+
+The broad hypothesis remains open, but the first direct-direction predictive strategy is not supported. The current candidate fails development-period CPCV robustness despite a modest positive final-holdout settlement proxy at low assumed costs. The stronger remaining predictive target is future volatility expansion, which should now be translated into independently specified volatility-sensitive strategy families. The option-surface skew signal remains a separate branch.
 
 ## Current baseline decision
 
