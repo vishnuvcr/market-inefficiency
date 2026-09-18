@@ -42,9 +42,9 @@ jobs:
       - name: Download frozen Phase 4B IV artifact
         uses: actions/download-artifact@v5
         with:
-          github-token: \${{ github.token }}
-          repository: \${{ github.repository }}
-          run-id: \${{ env.PHASE4B_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.PHASE4B_RUN_ID }}
           pattern: phase4b-iv-surfaces-*
           path: data/phase4d_iv
           merge-multiple: true
@@ -52,9 +52,9 @@ jobs:
       - name: Download frozen official NIFTY underlying
         uses: actions/download-artifact@v5
         with:
-          github-token: \${{ github.token }}
-          repository: \${{ github.repository }}
-          run-id: \${{ env.UNDERLYING_RUN_ID }}
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ env.UNDERLYING_RUN_ID }}
           pattern: phase4a-official-nifty-index-*
           path: data/phase4d_inputs/underlying
           merge-multiple: true
@@ -87,7 +87,7 @@ jobs:
       - name: Upload Phase 4D report
         uses: actions/upload-artifact@v4
         with:
-          name: phase4d-formal-diagnostics-\${{ github.sha }}
+          name: phase4d-formal-diagnostics-${{ github.sha }}
           path: data/phase4d_report/
           if-no-files-found: error
           retention-days: 90
