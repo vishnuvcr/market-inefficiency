@@ -33,7 +33,7 @@ HEADERS = {
     "Connection": "keep-alive",
 }
 LEGACY_REQUIRED = ["TIMESTAMP", "INSTRUMENT", "SYMBOL", "EXPIRY_DT", "STRIKE_PR",
-                   "OPTION_TYP", "OPEN", "HIGH", "LOW", "CLOSE", "LTP",
+                   "OPTION_TYP", "OPEN", "HIGH", "LOW", "CLOSE",
                    "SETTLE_PR", "CONTRACTS", "VAL_INLAKH", "OPEN_INT", "CHG_IN_OI"]
 UDIFF_REQUIRED = ["TradDt", "FinInstrmTp", "TckrSymb", "XpryDt", "StrkPric",
                   "OptnTp", "OpnPric", "HghPric", "LwPric", "ClsPric", "LastPric",
@@ -183,7 +183,14 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                 missing = [c for c in LEGACY_REQUIRED if c not in df.columns]
                 if missing:
                     raise ValueError(f"missing legacy columns: {missing}")
+                # Legacy NSE bhavcopies do not consistently expose an LTP field.
+                # Preserve that source limitation rather than substituting CLOSE for LTP.
+                legacy_last_price_col = next(
+                    (c for c in ("LTP", "LAST", "LAST_PRICE") if c in df.columns),
+                    None,
+                )
                 df = df[df["SYMBOL"].astype(str).str.upper().eq("NIFTY")]
+
                 df = df[df["OPTION_TYP"].astype(str).isin(["CE", "PE"])]
                 df = df.copy()
                 out = pd.DataFrame({
@@ -197,7 +204,11 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                     "high": pd.to_numeric(df["HIGH"], errors="coerce"),
                     "low": pd.to_numeric(df["LOW"], errors="coerce"),
                     "close": pd.to_numeric(df["CLOSE"], errors="coerce"),
-                    "last_price": pd.to_numeric(df["LTP"], errors="coerce"),
+                    "last_price": (
+                        pd.to_numeric(df[legacy_last_price_col], errors="coerce")
+                        if legacy_last_price_col is not None
+                        else pd.Series(pd.NA, index=df.index, dtype="Float64")
+                    ),
                     "settlement": pd.to_numeric(df["SETTLE_PR"], errors="coerce"),
                     "volume": pd.to_numeric(df["CONTRACTS"], errors="coerce"),
                     "turnover": pd.to_numeric(df["VAL_INLAKH"], errors="coerce") * 100000,
@@ -216,6 +227,11 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                 "csv_member": member,
                 "source_tier": rec.get("source_tier", "unknown"),
                 "nifty_option_rows": int(len(out)),
+                "last_price_source": (
+                    "legacy:" + legacy_last_price_col
+                    if route == "legacy" and legacy_last_price_col is not None
+                    else ("legacy:unavailable" if route == "legacy" else "udiff:LastPric")
+                ),
                 "raw_path": str(raw_path),
                 "normalized_path": str(norm_path),
             })
