@@ -6,7 +6,7 @@ Last updated: 2026-09-18
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A — NIFTY OPTIDX DATA ACQUISITION / VALIDATION IN PROGRESS**
+Status: **PHASE 4A — NIFTY OPTIDX DATA ACQUISITION / VALIDATION: HISTORICAL BUILD ACTIVE**
 
 Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
@@ -18,7 +18,7 @@ Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now b
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
-| 4. Option-market hypotheses | 🟡 In progress | 15% | NIFTY OPTIDX EOD snapshot |
+| 4. Option-market hypotheses | 🟡 In progress | 25% | Historical NIFTY OPTIDX snapshot |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe option/underlying regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
@@ -60,7 +60,7 @@ Implemented:
 
 The acquisition layer preserves original ZIP files, validates schemas, extracts NIFTY CE/PE rows, normalizes common fields, records SHA-256 hashes and creates an immutable snapshot manifest. Legacy and UDiFF formats are explicitly handled separately rather than silently assumed identical.
 
-The first bounded pilot is **2026-05-01 through 2026-05-14** and is currently running in GitHub Actions.
+The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. The historical build is now partitioned by calendar year to keep artifacts reproducible and bounded.
 
 ## Immediate next gates
 
