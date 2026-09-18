@@ -68,11 +68,10 @@ def rate_limited_get(session: requests.Session, url: str, timeout: int, delay_se
     global LAST_REQUEST_AT
     with REQUEST_LOCK:
         wait = delay_seconds - (time.monotonic() - LAST_REQUEST_AT)
-        if wait > 0:
-            time.sleep(wait)
-        response = session.get(url, timeout=timeout)
-        LAST_REQUEST_AT = time.monotonic()
-        return response
+        LAST_REQUEST_AT = time.monotonic() + max(wait, 0.0)
+    if wait > 0:
+        time.sleep(wait)
+    return session.get(url, timeout=timeout)
 
 
 def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_seconds: float) -> dict:
@@ -80,8 +79,10 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
     s = requests.Session()
     s.headers.update(HEADERS)
     candidate_urls = [(url, "nse-primary")]
+    # nsearchives is the official archive host alias and is useful when the
+    # primary archives host stalls; try it for both legacy and UDiFF routes.
+    candidate_urls.append((url.replace(BASE, FALLBACK_BASE, 1), "nse-fallback"))
     if route == "legacy":
-        candidate_urls.append((url.replace(BASE, FALLBACK_BASE, 1), "nse-fallback"))
         month_num = d.strftime("%m")
         filename = "fo" + f"{d:%d}{d:%b}".upper() + f"{d:%Y}bhav.csv.zip"
         mirror_url = f"{MIRROR_BASE}/{d:%Y}/{month_num}/{filename}"
@@ -108,7 +109,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                             "Accept": "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
                             "Accept-Language": "en-US,en;q=0.9",
                         })
-                    rr = rate_limited_get(request_session, candidate, timeout=60, delay_seconds=delay_seconds)
+                    rr = rate_limited_get(request_session, candidate, timeout=30, delay_seconds=delay_seconds)
                     attempt_record = {"source_tier": source_tier, "url": candidate, "http_status": rr.status_code}
                     rec["source_attempts"].append(attempt_record)
                     last_status = rr.status_code
