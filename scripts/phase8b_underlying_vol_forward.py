@@ -112,7 +112,9 @@ def main():
     p=m.predict_proba(fwd[FEATURES])[:,1]
     auc=float(roc_auc_score(fwd.target_vol_expand5.astype(int),p)) if fwd.target_vol_expand5.nunique()==2 else float("nan")
     forward={str(c):evaluate(fwd,p,c) for c in COSTS}
-    missing_forward={k:int(fwd[k].isna().sum()) for k in FEATURES+["target_ret1","target_vol_expand5"]}
+    pre_fwd=u[u.date>=fs].copy()
+    missing_forward={k:int(pre_fwd[k].isna().sum()) for k in FEATURES+["target_ret1","target_vol_expand5"]}
+    complete_rows=int(pre_fwd[FEATURES+["target_ret1","target_vol_expand5"]].notna().all(axis=1).sum())
     devc={str(c):cpcv(dev,c) for c in COSTS}
     promo={}
     for n in CANDIDATES:
@@ -121,7 +123,7 @@ def main():
                   "dev_median_cpcv_sharpe":s["median_sharpe"],"dev_positive_path_fraction":s["positive_path_fraction"],
                   "forward_sharpe":q["sharpe"],"forward_mean_daily":q["mean_daily"]}
     out={"status":"PASS","phase":"8B","objective":"fresh-forward reduced price+volatility test of five-session volatility expansion",
-         "data":{"dev_rows":len(dev),"dev_end":str(dev.date.max().date()),"forward_rows":len(fwd),"forward_start":str(fwd.date.min().date()),"forward_end":str(fwd.date.max().date()),"fresh_rows_before_feature_filter":int((u.date>=fs).sum()),"feature_missing_counts_in_forward_pre_filter":missing_forward},
+         "data":{"dev_rows":len(dev),"dev_end":str(dev.date.max().date()),"forward_rows":len(fwd),"forward_start":str(fwd.date.min().date()),"forward_end":str(fwd.date.max().date()),"fresh_rows_before_feature_filter":int(pre_fwd.shape[0]),"complete_rows_after_feature_filter":complete_rows,"feature_missing_counts_in_forward_pre_filter":missing_forward},
          "model":{"features":FEATURES,"logistic_C":.5,"threshold":THRESH,"specification_frozen_from_phase5_price_vol":True},
          "forward_volatility_prediction":{"auc":auc,"accuracy":float(accuracy_score(fwd.target_vol_expand5.astype(int),p>=.5)),"brier":float(brier_score_loss(fwd.target_vol_expand5.astype(int),p)),"expansion_rate":float(fwd.target_vol_expand5.mean())},
          "forward_cost_sensitivity":forward,"development_cpcv":devc,"promotion_gates":promo,
