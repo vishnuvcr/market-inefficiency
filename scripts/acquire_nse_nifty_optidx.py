@@ -78,10 +78,10 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
     route, url = url_for(d)
     s = requests.Session()
     s.headers.update(HEADERS)
-    candidate_urls = [(url, "nse-primary")]
-    # nsearchives is the official archive host alias and is useful when the
-    # primary archives host stalls; try it for both legacy and UDiFF routes.
-    candidate_urls.append((url.replace(BASE, FALLBACK_BASE, 1), "nse-fallback"))
+    # nsearchives is the official archive host alias and has proved more
+    # responsive for the current UDiFF route in CI, so prefer it.
+    fallback_url = url.replace(BASE, FALLBACK_BASE, 1)
+    candidate_urls = [(fallback_url, "nse-fallback"), (url, "nse-primary")]
     if route == "legacy":
         month_num = d.strftime("%m")
         filename = "fo" + f"{d:%d}{d:%b}".upper() + f"{d:%Y}bhav.csv.zip"
@@ -109,7 +109,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
                             "Accept": "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
                             "Accept-Language": "en-US,en;q=0.9",
                         })
-                    rr = rate_limited_get(request_session, candidate, timeout=30, delay_seconds=delay_seconds)
+                    rr = rate_limited_get(request_session, candidate, timeout=10, delay_seconds=delay_seconds)
                     attempt_record = {"source_tier": source_tier, "url": candidate, "http_status": rr.status_code}
                     rec["source_attempts"].append(attempt_record)
                     last_status = rr.status_code
