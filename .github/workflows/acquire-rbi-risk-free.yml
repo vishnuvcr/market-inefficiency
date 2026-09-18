@@ -1,0 +1,83 @@
+name: Acquire RBI PIT risk-free curve
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - scripts/acquire_rbi_tbill_risk_free.py
+      - .github/workflows/acquire-rbi-risk-free.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas openpyxl requests
+
+      - name: Resolve latest successful official NIFTY underlying artifact
+        id: underlying
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          run_id="$(gh run list             --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol             --status success             --limit 1             --json databaseId             --jq '.[0].databaseId')"
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "Using underlying acquisition run $run_id"
+
+      - name: Download official NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.underlying.outputs.run_id }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase4a_underlying
+          merge-multiple: true
+
+      - name: Acquire and build PIT risk-free curve
+        run: |
+          python scripts/acquire_rbi_tbill_risk_free.py             --start 2020-04-13             --end 2026-05-14             --decision-dates data/phase4a_underlying/nifty50_ohlc.csv
+
+      - name: Validate risk-free artifact
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          root=Path("data/phase4a/risk_free")
+          m=json.loads((root/"MANIFEST.json").read_text())
+          x=pd.read_csv(root/"rbi_tbill_auction_observations.csv")
+          c=pd.read_csv(root/"rbi_risk_free_daily_curve.csv")
+          assert m["status"]=="PASS", m
+          assert len(x)>300, len(x)
+          assert {"yield_pct_91","yield_pct_182","yield_pct_364"} <= set(c.columns)
+          assert len(c)>1000, len(c)
+          assert c[["yield_pct_91","yield_pct_182","yield_pct_364"]].notna().all().all()
+          print("RBI PIT risk-free: PASS")
+          print("observation rows:",len(x))
+          print("daily curve rows:",len(c))
+          print("coverage:",c["date"].min(),"to",c["date"].max())
+          print("source blob sha:",m["source"]["source_blob_sha"])
+          PY
+
+      - name: Upload immutable risk-free artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-rbi-risk-free-${{ github.sha }}
+          path: data/phase4a/risk_free/
+          if-no-files-found: error
+          retention-days: 90
