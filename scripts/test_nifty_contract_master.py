@@ -1,33 +1,39 @@
 #!/usr/bin/env python3
 """Unit tests for the Phase 4A NIFTY contract-level lot-size mapper."""
-from datetime import date
+import pandas as pd
 
-from build_nifty_contract_master import legacy_lot
+from build_nifty_contract_master import legacy_map
 
 
 def test_legacy_transition_rules() -> None:
-    lot, source, available = legacy_lot(date(2020, 4, 13), date(2020, 4, 30))
-    assert lot == 75
-    assert source == "NSE_FAOP44039"
-    assert available == "2020-03-31"
-
-    lot, source, available = legacy_lot(date(2021, 7, 8), date(2021, 7, 8))
-    assert lot == 75
-    assert source == "NSE_FAOP47854"
-    assert available == "2021-03-31"
-
-    lot, source, _ = legacy_lot(date(2021, 7, 29), date(2021, 7, 29))
-    assert lot == 50
-    assert source == "NSE_FAOP47854"
-
-    lot, source, _ = legacy_lot(date(2024, 4, 25), date(2024, 4, 25))
-    assert lot == 50
-    assert source == "NSE_FAOP47854"
-
-    lot, source, available = legacy_lot(date(2024, 4, 26), date(2024, 5, 2))
-    assert lot == 25
-    assert source == "NSE_FAOP61415"
-    assert available == "2024-04-02"
+    x = pd.DataFrame(
+        {
+            "trade_date": pd.to_datetime([
+                "2020-04-13", "2021-07-08", "2021-07-29",
+                "2024-04-25", "2024-04-26",
+            ]),
+            "expiry": pd.to_datetime([
+                "2020-04-16", "2021-07-08", "2021-07-29",
+                "2024-04-25", "2024-05-02",
+            ]),
+        }
+    )
+    y = legacy_map(x)
+    assert y["lot_size"].tolist() == [75, 75, 50, 50, 25]
+    assert y["source_version"].tolist() == [
+        "NSE_FAOP44039",
+        "NSE_FAOP47854",
+        "NSE_FAOP47854",
+        "NSE_FAOP61415",
+        "NSE_FAOP61415",
+    ]
+    assert y["available_at"].tolist() == [
+        "2020-03-31T23:59:59+00:00",
+        "2021-03-31T23:59:59+00:00",
+        "2021-03-31T23:59:59+00:00",
+        "2024-04-02T23:59:59+00:00",
+        "2024-04-02T23:59:59+00:00",
+    ]
 
 
 def main() -> int:
