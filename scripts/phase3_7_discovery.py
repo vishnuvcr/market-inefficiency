@@ -74,7 +74,7 @@ def main() -> None:
     m["vix_change"] = m["vix_close"].pct_change()
     m["next_return"] = m["return"].shift(-1)
     m["next_abs_return"] = m["return"].abs().shift(-1)
-    m["vix_tercile"] = pd.qcut(m["vix_close"], 3, labels=["LOW", "MID", "HIGH"], duplicates="drop")
+    m["vix_tercile"] = pd.qcut(m["vix_close"].rank(method="first"), 3, labels=["LOW", "MID", "HIGH"])
 
     conditional = {}
     for label, g in m.groupby("vix_tercile", observed=True):
