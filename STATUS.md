@@ -55,7 +55,7 @@ Added `scripts/phase3_volatility_persistence.py` and its deterministic CI test. 
 
 ## Phase 3.4 implementation
 
-Added `scripts/phase3_jump_diagnostics.py` and its deterministic CI test. The diagnostic provides a robust standardized-return jump proxy, a bipower-variation-style excess-variation proxy, and a Parkinson range-based excess-variation proxy. It explicitly records sampling sensitivity and remains descriptive-only; a jump proxy is not evidence of tradable mispricing.
+Added `scripts/phase3_jump_diagnostics.py` and its deterministic CI test. The diagnostic provides a robust standardized-return jump proxy, a bipower-variation-style excess-variation proxy, and a Parkinson range-based excess-variation proxy. A dedicated six-observation fixture now keeps the jump test independent of the five-row baseline fixture. The implementation remains descriptive-only; a jump proxy is not evidence of tradable mispricing.
 
 ## Phase 3 roadmap
 
@@ -77,6 +77,6 @@ Phase 3 findings are descriptive evidence only. No apparent pattern will be labe
 2. Normalize NIFTY and India VIX with the existing adapter.
 3. Run quality/exclusion diagnostics and snapshot-manifest generation.
 4. Execute Phase 3.1 on the validated real snapshot.
-5. Execute Phase 3.1–3.2 on the validated real snapshot.
-6. Build Phase 3.4 jump diagnostics.
+5. Execute Phase 3.2–3.4 on the validated real snapshot after explicit sessionization/sampling choices are fixed.
+6. Implement Phase 3.5 memory/dependence diagnostics with estimator and surrogate controls.
 7. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
