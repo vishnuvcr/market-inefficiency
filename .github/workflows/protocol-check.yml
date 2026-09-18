@@ -29,6 +29,8 @@ jobs:
         run: python scripts/validate_phase2_fixture.py
       - name: Test NSE F&O EOD normalization adapter
         run: python scripts/test_nse_fo_eod_adapter.py
+      - name: Test NIFTY contract-level lot-size mapper
+        run: python scripts/test_nifty_contract_master.py
       - name: Test Kaggle NIFTY normalization adapter
         run: python scripts/test_kaggle_nifty_adapter.py
       - name: Test Phase 2 quality and contract reconciliation

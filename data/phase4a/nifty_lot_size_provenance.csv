@@ -1,8 +1,12 @@
 rule_id,scope,effective_rule,lot_size,source
-LOT_2021,NIFTY expiries,"Through June 2021 expiries",75,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
-LOT_2021,NIFTY expiries,"July 2021 onward",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2020,NIFTY,"2020 review retained NIFTY lot size at 75",75,https://nsearchives.nseindia.com/content/circulars/FAOP44039.pdf
+LOT_2021A,NIFTY monthly/weekly,"May and June 2021 monthly expiries retain 75; July 2021 monthly expiry and beyond use 50",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2021B,NIFTY weekly,"August 2021 weekly expiry and beyond use 50; July 2021 weekly expiries remain under the pre-revision 75 regime",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2021C,NIFTY long-term options,"Existing NIFTY long-term options (>3 months) revised from 75 to 50 after June 25 2021 expiry",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
 LOT_2023,NIFTY expiries,"2023 review retained 50",50,https://archives.nseindia.com/content/circulars/FAOP56233.pdf
-LOT_2024A,NIFTY all new/available contracts,"Trade date Apr 26 2024 onward; April 25 expiry remains 50",25,https://nsearchives.nseindia.com/content/circulars/FAOP61415.pdf
-LOT_2024B,NIFTY new contracts,"New weekly/monthly/quarterly/half-yearly contracts introduced from Nov 20 2024 onward",75,https://nsearchives.nseindia.com/content/circulars/FAOP64625.pdf
-LOT_2025,NIFTY weekly/monthly,"Existing 75 lot applies through Dec 30 2025 expiry; first revised weekly Jan 6 2026 and monthly Jan 27 2026",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
-LOT_2025,NIFTY quarterly/half-yearly,"Existing quarterly/half-yearly contracts revised EOD Dec 30 2025",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
+LOT_2024A,NIFTY all contracts,"April 25 2024 monthly expiry remains 50; all NIFTY contracts available for trading from April 26 2024 onward use 25",25,https://nsearchives.nseindia.com/content/circulars/FAOP61415.pdf
+LOT_2024B_NEW,NIFTY new weekly/monthly/quarterly/half-yearly,"New index contracts introduced from November 20 2024 onward use 75; existing weekly/monthly contracts retain 25 through expiry",75,https://nsearchives.nseindia.com/content/circulars/FAOP64625.pdf
+LOT_2024B_EXISTING_QH,NIFTY quarterly/half-yearly,"Existing quarterly/half-yearly contracts transition from 25 to 75 on December 26 2024 EOD",75,https://nsearchives.nseindia.com/content/circulars/FAOP64625.pdf
+LOT_2025_WEEKLY,NIFTY weekly,"Last existing-lot weekly expiry 23-Dec-2025; first revised-lot weekly expiry 06-Jan-2026",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
+LOT_2025_MONTHLY,NIFTY monthly,"Last existing-lot monthly expiry 30-Dec-2025; first revised-lot monthly expiry 27-Jan-2026",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
+LOT_2025_QH,NIFTY quarterly/half-yearly,"All existing quarterly/half-yearly contracts transition from 75 to 65 on December 30 2025 EOD",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
