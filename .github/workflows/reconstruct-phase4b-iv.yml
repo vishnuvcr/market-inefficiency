@@ -7,6 +7,9 @@ on:
     paths:
       - scripts/reconstruct_phase4b_iv.py
       - .github/workflows/reconstruct-phase4b-iv.yml
+  pull_request:
+    branches:
+      - research/v1.0-protocol
   workflow_dispatch:
 
 permissions:
