@@ -2,78 +2,142 @@
 """Build a contract-level NIFTY lot-size master for Phase 4A.
 
 Legacy NSE bhavcopies do not carry NewBrdLotQty, so legacy observations are
-mapped only where the frozen NSE circular rules identify a unique lot size.
-UDiFF observations carry NewBrdLotQty and are preserved as source-observed
-values.
+mapped from the frozen NSE circular regimes. UDiFF observations carry
+NewBrdLotQty and are preserved as source-observed values.
 
-The output is an interval master keyed by:
-    NIFTY|expiry|strike|option_type
+The implementation is vectorized over each daily normalized file because the
+full historical snapshot contains millions of option rows.
 """
 from __future__ import annotations
 
 import argparse
 import csv
-from collections import defaultdict
-from datetime import date, datetime, time, timezone
 from pathlib import Path
 
 import pandas as pd
 
-
-def d(value: object) -> date | None:
-    if value is None or pd.isna(value) or str(value).strip() == "":
-        return None
-    return pd.to_datetime(value, errors="coerce").date()
-
-
-def contract_id(expiry: date, strike: float, option_type: str) -> str:
-    return f"NIFTY|{expiry.isoformat()}|{strike:g}|{option_type}"
+JULY_2021_WEEKLY = {
+    pd.Timestamp("2021-07-01"),
+    pd.Timestamp("2021-07-08"),
+    pd.Timestamp("2021-07-15"),
+    pd.Timestamp("2021-07-22"),
+}
 
 
-def legacy_rule(trade_date: date, expiry: date) -> tuple[int, str, str]:
-    """Return lot, source version, source publication date for legacy rows."""
-    # NSE FAOP47854: 75 through June 2021; July monthly and later monthly
-    # contracts are 50; August 2021 weekly and later are 50. The July 2021
-    # weekly expiries are the only transitional weekly observations and remain
-    # under the pre-revision 75 regime.
-    july_weekly = {
-        date(2021, 7, 1),
-        date(2021, 7, 8),
-        date(2021, 7, 15),
-        date(2021, 7, 22),
-    }
-    if trade_date < date(2021, 4, 30):
-        return 75, "NSE_FAOP44039", "2020-03-31"
-    if trade_date <= date(2021, 6, 25):
-        return 75, "NSE_FAOP47854", "2021-03-31"
-    if expiry in july_weekly:
-        return 75, "NSE_FAOP47854", "2021-03-31"
-    if expiry >= date(2021, 7, 29):
-        return 50, "NSE_FAOP47854", "2021-03-31"
-    # Existing long-term contracts were revised after June 25 EOD.
-    if trade_date >= date(2021, 6, 28) and expiry > date(2021, 6, 25):
-        return 50, "NSE_FAOP47854", "2021-03-31"
-    raise ValueError(
-        f"Ambiguous legacy NIFTY lot regime: trade_date={trade_date}, "
-        f"expiry={expiry}"
+def legacy_map(df: pd.DataFrame) -> pd.DataFrame:
+    """Map legacy rows to a uniquely identified NSE lot regime."""
+    t = pd.to_datetime(df["trade_date"], errors="coerce").dt.normalize()
+    e = pd.to_datetime(df["expiry"], errors="coerce").dt.normalize()
+
+    lot = pd.Series(pd.NA, index=df.index, dtype="Int64")
+    source = pd.Series(pd.NA, index=df.index, dtype="string")
+    available = pd.Series(pd.NA, index=df.index, dtype="string")
+
+    # NIFTY remained at 75 under FAOP44039, published 2020-03-31.
+    m = t < pd.Timestamp("2021-04-30")
+    lot[m] = 75
+    source[m] = "NSE_FAOP44039"
+    available[m] = "2020-03-31T23:59:59+00:00"
+
+    # FAOP47854: May/June 2021 monthly expiries retain 75.
+    m = (t >= pd.Timestamp("2021-04-30")) & (t <= pd.Timestamp("2021-06-25"))
+    lot[m] = 75
+    source[m] = "NSE_FAOP47854"
+    available[m] = "2021-03-31T23:59:59+00:00"
+
+    # July 2021 weekly expiries remain in the pre-revision 75 regime;
+    # July 29 is the revised monthly expiry.
+    m = e.isin(JULY_2021_WEEKLY)
+    lot[m] = 75
+    source[m] = "NSE_FAOP47854"
+    available[m] = "2021-03-31T23:59:59+00:00"
+
+    # From July 2021 monthly / August 2021 weekly onward, and existing
+    # long-term contracts after the June expiry, lot size is 50.
+    m = lot.isna() & (t < pd.Timestamp("2024-04-26"))
+    lot[m] = 50
+    source[m] = "NSE_FAOP47854"
+    available[m] = "2021-03-31T23:59:59+00:00"
+
+    # FAOP61415: April 25 2024 monthly expiry remains 50; every NIFTY
+    # contract available for trading from April 26 onward is 25.
+    m = t >= pd.Timestamp("2024-04-26")
+    lot[m] = 25
+    source[m] = "NSE_FAOP61415"
+    available[m] = "2024-04-02T23:59:59+00:00"
+    m = m & (e == pd.Timestamp("2024-04-25"))
+    lot[m] = 50
+
+    if lot.isna().any():
+        bad = df.loc[lot.isna(), ["trade_date", "expiry"]].head().to_dict("records")
+        raise ValueError(f"Unmapped legacy NIFTY lot rows: {bad}")
+
+    return pd.DataFrame(
+        {
+            "lot_size": lot.astype("int64"),
+            "source_version": source,
+            "available_at": available,
+        },
+        index=df.index,
     )
 
 
-def legacy_lot(trade_date: date, expiry: date) -> tuple[int, str, str]:
-    # FAOP61415: the April 25 2024 monthly expiry remains 50; every NIFTY
-    # contract available for trading from April 26 onward uses 25.
-    if trade_date >= date(2024, 4, 26):
-        if expiry == date(2024, 4, 25):
-            return 50, "NSE_FAOP61415", "2024-04-02"
-        return 25, "NSE_FAOP61415", "2024-04-02"
-    return legacy_rule(trade_date, expiry)
+def process_file(path: Path) -> pd.DataFrame:
+    cols = [
+        "trade_date", "expiry", "strike", "option_type", "lot_size",
+        "available_at",
+    ]
+    df = pd.read_csv(path, usecols=lambda c: c in cols)
+    required = set(cols[:5])
+    missing = required - set(df.columns)
+    if missing:
+        raise SystemExit(f"{path}: missing columns {sorted(missing)}")
 
+    df["trade_date"] = pd.to_datetime(df["trade_date"], errors="coerce").dt.normalize()
+    df["expiry"] = pd.to_datetime(df["expiry"], errors="coerce").dt.normalize()
+    df["strike"] = pd.to_numeric(df["strike"], errors="coerce")
+    df["lot_size"] = pd.to_numeric(df["lot_size"], errors="coerce")
+    df["option_type"] = df["option_type"].astype("string").str.strip().str.upper()
+    df = df[
+        df["trade_date"].notna()
+        & df["expiry"].notna()
+        & df["strike"].gt(0)
+        & df["option_type"].isin(["CE", "PE"])
+        & df["expiry"].ge(df["trade_date"])
+    ].copy()
 
-def iso_eod_utc(publication_date: str) -> str:
-    dt = datetime.combine(
-        date.fromisoformat(publication_date), time(23, 59, 59)
-    ).replace(tzinfo=timezone.utc)
-    return dt.isoformat()
+    legacy = df["lot_size"].isna()
+    if legacy.any():
+        mapped = legacy_map(df.loc[legacy])
+        df.loc[legacy, ["lot_size", "source_version", "available_at"]] = mapped
+
+    observed = ~legacy
+    df.loc[observed, "lot_size"] = df.loc[observed, "lot_size"].astype("int64")
+    df.loc[observed, "source_version"] = "NSE_UDIFF_NewBrdLotQty"
+    if "available_at" not in df.columns:
+        df["available_at"] = pd.NA
+    df.loc[observed & df["available_at"].isna(), "available_at"] = (
+        df.loc[observed & df["available_at"].isna(), "trade_date"]
+        .dt.tz_localize("Asia/Kolkata")
+        .dt.tz_convert("UTC")
+        .map(lambda x: x.isoformat())
+    )
+
+    # Canonical contract key. String strike is stable across daily files.
+    df["contract_id"] = (
+        "NIFTY|"
+        + df["expiry"].dt.strftime("%Y-%m-%d")
+        + "|"
+        + df["strike"].map(lambda x: f"{x:g}")
+        + "|"
+        + df["option_type"]
+    )
+    return df[
+        [
+            "contract_id", "expiry", "strike", "option_type", "trade_date",
+            "lot_size", "source_version", "available_at",
+        ]
+    ]
 
 
 def main() -> int:
@@ -82,112 +146,62 @@ def main() -> int:
     ap.add_argument("--output", required=True, type=Path)
     args = ap.parse_args()
 
-    files = sorted(args.normalized_dir.rglob("*.csv"))
+    files = sorted(args.normalized_dir.rglob("normalized/*.csv"))
+    if not files:
+        # Also support a directory whose immediate contents are daily CSVs.
+        files = sorted(args.normalized_dir.rglob("*.csv"))
     if not files:
         raise SystemExit(f"No normalized CSV files under {args.normalized_dir}")
 
-    intervals = defaultdict(list)
-    row_count = 0
-    legacy_count = 0
-    observed_count = 0
+    parts = [process_file(p) for p in files]
+    x = pd.concat(parts, ignore_index=True)
+    x = x.sort_values(["contract_id", "trade_date"]).reset_index(drop=True)
 
-    for path in files:
-        df = pd.read_csv(path)
-        required = {"trade_date", "expiry", "strike", "option_type", "lot_size"}
-        missing = required - set(df.columns)
-        if missing:
-            raise SystemExit(f"{path}: missing columns {sorted(missing)}")
+    # Collapse identical lot regimes to intervals. UDiFF available_at is an
+    # observation-level timestamp and is therefore not part of the regime key.
+    state_cols = ["lot_size", "source_version"]
+    prev = x.groupby("contract_id")[state_cols].shift(1)
+    changed = x[state_cols].ne(prev).any(axis=1)
+    interval = changed.groupby(x["contract_id"]).cumsum()
+    x["_interval"] = interval
 
-        for row in df.itertuples(index=False):
-            trade_date = d(getattr(row, "trade_date"))
-            expiry = d(getattr(row, "expiry"))
-            strike = float(getattr(row, "strike"))
-            option_type = str(getattr(row, "option_type")).strip().upper()
-            if trade_date is None or expiry is None or strike <= 0 or option_type not in {"CE", "PE"}:
-                continue
-            if expiry < trade_date:
-                raise SystemExit(f"{path}: expiry before trade date")
+    master = (
+        x.groupby(["contract_id", "_interval"], sort=True, as_index=False)
+        .agg(
+            underlying_id=("contract_id", lambda _: "NIFTY50"),
+            expiry=("expiry", "first"),
+            strike=("strike", "first"),
+            option_type=("option_type", "first"),
+            lot_size=("lot_size", "first"),
+            effective_from=("trade_date", "first"),
+            effective_to=("trade_date", "last"),
+            source_version=("source_version", "first"),
+            available_at=("available_at", "first"),
+        )
+    )
 
-            raw_lot = getattr(row, "lot_size")
-            if pd.notna(raw_lot) and float(raw_lot) > 0:
-                lot = int(float(raw_lot))
-                source_version = "NSE_UDIFF_NewBrdLotQty"
-                source_available = getattr(row, "available_at", None)
-                if pd.isna(source_available) or str(source_available).strip() == "":
-                    source_available = (
-                        pd.Timestamp(trade_date, tz="Asia/Kolkata")
-                        .tz_convert("UTC")
-                        .isoformat()
-                    )
-                observed_count += 1
-            else:
-                lot, source_version, pub_date = legacy_lot(trade_date, expiry)
-                source_available = iso_eod_utc(pub_date)
-                legacy_count += 1
+    master["expiry"] = pd.to_datetime(master["expiry"]).dt.strftime("%Y-%m-%d")
+    master["effective_from"] = pd.to_datetime(master["effective_from"]).dt.strftime("%Y-%m-%d")
+    master["effective_to"] = pd.to_datetime(master["effective_to"]).dt.strftime("%Y-%m-%d")
+    master["lot_size"] = master["lot_size"].astype(int)
+    master = master[
+        [
+            "contract_id", "underlying_id", "expiry", "strike", "option_type",
+            "lot_size", "effective_from", "effective_to", "available_at",
+            "source_version",
+        ]
+    ]
 
-            key = contract_id(expiry, strike, option_type)
-            intervals[key].append({
-                "trade_date": trade_date,
-                "lot_size": lot,
-                "source_version": source_version,
-                "available_at": str(source_available),
-                "expiry": expiry,
-                "strike": strike,
-                "option_type": option_type,
-            })
-            row_count += 1
-
-    output = []
-    for key, records in sorted(intervals.items()):
-        records.sort(key=lambda x: x["trade_date"])
-        current = None
-        for rec in records:
-            state = (rec["lot_size"], rec["source_version"], rec["available_at"])
-            if current is None or state != current["state"]:
-                if current is not None:
-                    current["effective_to"] = (rec["trade_date"] - pd.Timedelta(days=1)).date().isoformat()
-                    output.append(current["row"])
-                current = {
-                    "state": state,
-                    "row": {
-                        "contract_id": key,
-                        "underlying_id": "NIFTY50",
-                        "expiry": rec["expiry"].isoformat(),
-                        "strike": rec["strike"],
-                        "option_type": rec["option_type"],
-                        "lot_size": rec["lot_size"],
-                        "effective_from": rec["trade_date"].isoformat(),
-                        "effective_to": None,
-                        "available_at": rec["available_at"],
-                        "source_version": rec["source_version"],
-                    },
-                }
-        if current is not None:
-            current["row"]["effective_to"] = records[-1]["trade_date"].isoformat()
-            output.append(current["row"])
-
-    # Reject contradictory overlapping source states.
-    seen = set()
-    for row in output:
-        key = (row["contract_id"], row["effective_from"])
-        if key in seen:
-            raise SystemExit(f"Duplicate master interval: {key}")
-        seen.add(key)
+    # Hard checks.
+    assert master["lot_size"].gt(0).all()
+    assert master["contract_id"].notna().all()
+    assert not master.duplicated(["contract_id", "effective_from"]).any()
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
-    fields = [
-        "contract_id", "underlying_id", "expiry", "strike", "option_type",
-        "lot_size", "effective_from", "effective_to", "available_at",
-        "source_version",
-    ]
-    with args.output.open("w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=fields)
-        writer.writeheader()
-        writer.writerows(output)
-
+    master.to_csv(args.output, index=False, quoting=csv.QUOTE_MINIMAL)
     print(
-        f"Contract master: {len(output)} intervals from {row_count} observations "
-        f"(legacy={legacy_count}, UDiFF-observed={observed_count})"
+        f"Contract master: {len(master)} intervals from {len(x)} observations "
+        f"across {len(files)} normalized files"
     )
     return 0
 
