@@ -1,0 +1,97 @@
+name: Freeze Phase 4A PIT snapshot
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - scripts/freeze_phase4a_pit.py
+      - .github/workflows/freeze-phase4a-pit.yml
+      - data/phase4a/**
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  freeze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas
+
+      - name: Resolve latest successful acquisition/reconciliation inputs
+        id: runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          opt_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire historical NIFTY OPTIDX EOD partitions"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          rec_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Reconcile NIFTY OPTIDX historical snapshot"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          und_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          rf_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire RBI PIT risk-free curve"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          for x in "$opt_run" "$rec_run" "$und_run" "$rf_run"; do test -n "$x"; done
+          echo "opt_run=$opt_run" >> "$GITHUB_OUTPUT"
+          echo "rec_run=$rec_run" >> "$GITHUB_OUTPUT"
+          echo "und_run=$und_run" >> "$GITHUB_OUTPUT"
+          echo "rf_run=$rf_run" >> "$GITHUB_OUTPUT"
+
+      - name: Download immutable option partitions
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.opt_run }}
+          pattern: nse-nifty-optidx-*
+          path: data/phase4a_options
+          merge-multiple: false
+
+      - name: Download NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.und_run }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase4a_inputs/underlying
+          merge-multiple: true
+
+      - name: Download NIFTY lot master
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.rec_run }}
+          pattern: phase4a-nifty-contract-master-*
+          path: data/phase4a_inputs/lot_master
+          merge-multiple: true
+
+      - name: Download RBI risk-free
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.rf_run }}
+          pattern: phase4a-rbi-risk-free-*
+          path: data/phase4a_inputs/risk_free
+          merge-multiple: true
+
+      - name: Freeze PIT snapshot
+        run: |
+          python scripts/freeze_phase4a_pit.py             --options-root data/phase4a_options             --underlying data/phase4a_inputs/underlying/nifty50_ohlc.csv             --lot-master data/phase4a_inputs/lot_master/NIFTY_CONTRACT_MASTER.csv             --risk-free data/phase4a_inputs/risk_free/rbi_risk_free_daily_curve.csv             --output data/phase4a/pit_snapshot
+
+      - name: Upload immutable Phase 4A PIT snapshot
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-pit-snapshot-${{ github.sha }}
+          path: data/phase4a/pit_snapshot/
+          if-no-files-found: error
+          retention-days: 90
