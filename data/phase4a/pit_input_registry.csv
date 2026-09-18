@@ -1,0 +1,8 @@
+input_id,field,period,source,status,pit_requirement,notes
+OPTIDX_EOD,option EOD OHLC/settlement/OI/volume,2020-04-13:2026-05-14,NSE F&O historical bhavcopy / UDiFF,PASS,available by EOD research convention,"Structural reconciliation passed; exact publication timestamp not observed"
+LOT_SIZE,contract lot size,2020-04-13:2026-05-14,NSE F&O circulars FAOP47854 FAOP56233 FAOP61415 FAOP64625,REQUIRES_CONTRACT_MASTER,contract-level,"Trade-date-only mapping is insufficient during transition regimes"
+UNDERLYING_UDIFF,underlying_price,2024-07-08:2026-05-14,NSE UDiFF Common Bhavcopy,AVAILABLE,PIT field present,"Source field UndrlygPric"
+UNDERLYING_LEGACY,underlying_price,2020-04-13:2024-07-07,external PIT NIFTY index EOD source,REQUIRED,point-in-time,"Legacy acquisition intentionally preserves NA; no substitution"
+RISK_FREE,term structure,2020-04-13:2026-05-14,RBI Treasury Bill / Government security data,CANDIDATE,publication timestamp required,"91-day T-bill auction yields are available from RBI; exact PIT interpolation/carry rule not frozen"
+AVAILABILITY,EOD publication timing,2020-04-13:2026-05-14,NSE EOD data documentation,CONVENTION_ONLY,decision timestamp,"NSE documents once-EOD generation; exact publication time not established"
+GAP_20210330,option EOD coverage,2021-03-30,NSE primary/fallback/secondary archive routes,EXCLUDED,complete daily coverage,"Trading day but archive unavailable; no interpolation permitted"
