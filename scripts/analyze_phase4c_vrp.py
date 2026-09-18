@@ -112,7 +112,7 @@ def realized_variance_by_calendar_horizon(
         rv = float(np.sum(rr * rr) * 365.0 / actual_days)
         out.append(
             {
-                "trade_date": pd.Timestamp(d).strftime("%Y-%m-%d"),
+                "trade_date": pd.Timestamp(d),
                 "realized_variance": rv,
                 "realized_vol": float(np.sqrt(max(rv, 0.0))),
                 "actual_days": actual_days,
