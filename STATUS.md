@@ -9,7 +9,7 @@ Last updated: 2026-09-18
 Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
 
 Overall Phase 2 completion: **~55%**  
-Phase 3.1 implementation: **complete as a deterministic diagnostic scaffold; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3.1–3.2 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3.1 implementation: **complete as a deterministic diagnostic scaffold; 0% 
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 10% | Run against validated NIFTY/VIX snapshot |
+| 3. Stylized facts | 🟡 Scaffold implemented | 20% | Run Phase 3.1–3.2 against validated NIFTY/VIX snapshot |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
@@ -38,6 +38,10 @@ The baseline reports:
 - close-price maximum drawdown
 
 The module is explicitly diagnostic-only. It does not fit a trading strategy and does not authorize execution backtesting.
+
+## Phase 3.2 implementation
+
+Added `scripts/phase3_realized_volatility.py` and its deterministic CI test. The diagnostic compares close-to-close, Parkinson, Garman–Klass and Yang–Zhang variance/volatility estimators, with explicit annualization-period control and OHLC consistency checks. It remains descriptive-only and does not authorize strategy or execution backtesting.
 
 ## Data evidence boundary
 
@@ -65,5 +69,6 @@ Phase 3 findings are descriptive evidence only. No apparent pattern will be labe
 2. Normalize NIFTY and India VIX with the existing adapter.
 3. Run quality/exclusion diagnostics and snapshot-manifest generation.
 4. Execute Phase 3.1 on the validated real snapshot.
-5. Build Phase 3.2 realized-volatility estimators.
-6. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
+5. Execute Phase 3.1–3.2 on the validated real snapshot.
+6. Build Phase 3.3 volatility persistence diagnostics.
+7. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
