@@ -6,7 +6,7 @@ Last updated: 2026-09-19
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A PIT SNAPSHOT FROZEN; PHASE 4B IV RECONSTRUCTION PASSED; PHASE 4C VRP DIAGNOSTICS PASSED**
+Status: **PHASE 4A PIT SNAPSHOT FROZEN; PHASE 4B IV RECONSTRUCTION PASSED; PHASE 4C VRP DIAGNOSTICS PASSED; PHASE 4D FORMAL H-A2/H-B1/H-C1 DIAGNOSTICS PASSED**
 
 Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
@@ -18,8 +18,8 @@ Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now b
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
-| 4. Option-market hypotheses | 🟢 Core PIT/IV + VRP diagnostic gates passed | 70% | Formal state-dependent / surface tests |
-| 5. Multimodal regime model | 🟡 Prepared by Phase 4C PIT features | 20% | Leakage-safe multimodal feature construction |
+| 4. Option-market hypotheses | 🟢 Formal PIT/IV + VRP + H-A2/H-B1/H-C1 gates passed | 85% | Economic/execution validation and multiplicity controls |
+| 5. Multimodal regime model | 🟡 Prepared by Phase 4D surface features | 20% | Leakage-safe multimodal feature construction |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
 | 8. Paper trading | ⚪ Not started | 0% | Post-validation only |
@@ -160,10 +160,42 @@ Within the current **2020-04-13 to 2026-05-14** PIT sample, the first formal dia
 
 This is **not yet evidence of a tradable strategy**. The estimate uses overlapping future-return outcomes, settlement-based option IVs, and a descriptive regime split. Next-stage work must test economic costs, leverage/risk limits, state-transition robustness, surface-shape effects, cross-validation/holdout performance, and multiple-testing controls (CPCV/DSR/PBO) before any strategy-level conclusion.
 
+## Phase 4D — formal H-A2/H-B1/H-C1 diagnostics PASSED
+
+GitHub Actions run **#6** (35395984072), job 105764794682, completed successfully on the frozen Phase 4B IV artifact and official NIFTY underlying. Artifact **10567498551** has digest sha256:e574406bb2a47dd54d4f5c8c192c9a333c8ad14cb1020f615c5bade1eacd181c.
+
+The test uses a chronological 80/20 split with all regime cut points, standardization constants and calibration coefficients estimated from the first 80% only.
+
+### H-A2 — state dependence
+- 30D holdout VRP means: LOW **0.00742**, MID **-0.01382**, HIGH **-0.00348**.
+- 30D MID−LOW = **-0.02125**, HAC SE **0.00742**, p **0.00419**; this is the only one of the four preregistered state contrasts surviving Bonferroni alpha **0.0125**.
+- 30D HIGH−LOW p **0.12249**.
+- 60D MID−LOW = **-0.01231**, p **0.03527**; it does not survive Bonferroni.
+- 60D HIGH−LOW p **0.91656**.
+
+The high-volatility state therefore does **not** show a robust monotonic increase in VRP in the untouched holdout. The state pattern is non-monotonic and horizon-sensitive.
+
+### H-B1 — jump-risk
+- Holdout residual mean **-0.000696**, HAC SE **0.001212**, 95% CI **[-0.003071, 0.001680]**, p **0.566**.
+- OOS RMSE with downside-wing tail proxy **0.007189** versus **0.007170** for controls only.
+
+The tested downside-wing proxy adds no incremental holdout information about subsequent jump variance in this specification.
+
+### H-C1 — surface shape
+- 30D downside skew: OOS R² **0.3645**, holdout coefficient p **9.71×10⁻⁷**.
+- 30D upside skew: OOS R² **0.1095**, p **0.00296**.
+- 30D–60D ATM term slope: OOS R² **0.0205**, p **0.07768**.
+- Bonferroni alpha for the three surface-feature coefficient checks: **0.0167**; downside and upside skew survive, term slope does not.
+
+### Usable Phase 4 conclusion
+
+The Phase 4D holdout materially refines the research direction. **Aggregate VRP remains supported, but the previously observed high-volatility-state effect is not robust after a frozen chronological holdout and multiplicity correction. The tested jump-risk proxy adds no incremental predictive evidence. Surface shape—especially downside and upside skew—shows the strongest surviving out-of-sample signal, predicting later changes in the option surface itself.** This is not yet evidence of a profitable trading strategy because the target is surface evolution rather than executable returns.
+
+Detailed reproducible results are recorded in docs/PHASE4D_RESULTS.md.
+
 ## Immediate next gates
 
-1. Freeze the Phase 4B IV artifact and provenance in the research status ledger.
-2. Run formal H-A2 state-dependence tests with leakage-safe regime features and interaction terms.
-3. Run H-B1 jump-risk and H-C1 surface-shape diagnostics from the same PIT surface.
-4. Build the multimodal regime dataset for Phase 5.
-5. Only after these falsification tests, build the net-of-cost portfolio/execution layer.
+1. Build the Phase 5 multimodal regime feature set around the surviving surface-shape signals, with strict point-in-time construction.
+2. Acquire/validate quote or order-trade data before treating any surface signal as executable.
+3. Translate surface predictability into explicit market-neutral candidate returns and apply realistic transaction costs/slippage.
+4. Run CPCV, Deflated Sharpe Ratio, Probability of Backtest Overfitting, stress tests and an untouched chronological holdout before any strategy-level conclusion.
