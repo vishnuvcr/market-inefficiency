@@ -1,0 +1,61 @@
+name: Acquire NIFTY OPTIDX EOD snapshot
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - "scripts/acquire_nse_nifty_optidx.py"
+      - ".github/workflows/acquire-nifty-optidx.yml"
+  workflow_dispatch:
+    inputs:
+      start:
+        description: "Inclusive trade date YYYY-MM-DD"
+        required: true
+        default: "2026-05-01"
+      end:
+        description: "Inclusive trade date YYYY-MM-DD"
+        required: true
+        default: "2026-05-14"
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: python -m pip install --upgrade requests pandas
+      - name: Acquire bounded NIFTY option snapshot
+        env:
+          START_DATE: ${{ github.event.inputs.start || '2026-05-01' }}
+          END_DATE: ${{ github.event.inputs.end || '2026-05-14' }}
+        run: |
+          python scripts/acquire_nse_nifty_optidx.py --start "$START_DATE" --end "$END_DATE"
+      - name: Validate snapshot manifest
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          p=Path("data/nse_option_snapshot/MANIFEST.json")
+          x=json.loads(p.read_text())
+          assert x["validated_days"] > 0, x
+          assert x["error_days"] == 0, x
+          assert x["raw_preserved"] is True
+          print("Snapshot validation PASS")
+          print("validated_days =", x["validated_days"])
+          print("no_archive_days =", x["no_archive_days"])
+          PY
+      - name: Upload immutable pilot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: nse-nifty-optidx-pilot-${{ github.sha }}
+          path: data/nse_option_snapshot/
+          if-no-files-found: error
