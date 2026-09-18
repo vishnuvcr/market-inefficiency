@@ -60,12 +60,13 @@ Implemented:
 
 The acquisition layer preserves original ZIP files, validates schemas, extracts NIFTY CE/PE rows, normalizes common fields, records SHA-256 hashes and creates an immutable snapshot manifest. Legacy and UDiFF formats are explicitly handled separately rather than silently assumed identical.
 
-The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. The historical build is now partitioned by calendar year to keep artifacts reproducible and bounded. The first historical run exposed a legacy-route URL construction defect: the URL builder uppercased the complete base URL while preserving the file prefix. This has been corrected to construct the legacy NSE path with exact path casing. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build.
+The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. The historical build is now partitioned by calendar year to keep artifacts reproducible and bounded. The first historical runs exposed a legacy-source acquisition problem after the URL casing correction: acquisition could complete without producing normalized files because source-level outcomes were not sufficiently visible. The downloader now records per-source HTTP/error diagnostics, performs ZIP integrity checks, uses clean headers for the secondary mirror, and fails explicitly on ERROR days or zero validated days. The workflow now runs a real one-session legacy smoke test (2020-04-13) before allowing 2020–2024 partitions to start; 2025–2026 remain independently eligible. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build.
 
 ## Immediate next gates
 
-1. Rerun and complete the corrected 2020–2026 historical partitions.
-2. Reconcile validated days, no-archive days and daily NIFTY contract counts.
+1. Pass the real legacy-source smoke test and expose source-tier diagnostics.
+2. Rerun and complete the 2020–2026 historical partitions only after the smoke gate passes.
+3. Reconcile validated days, no-archive days and daily NIFTY contract counts.
 3. Validate the legacy/UDiFF historical boundary and freeze the normalized option-EOD snapshot.
 4. Add point-in-time lot-size and risk-free inputs.
 5. Begin Phase 4B implied-volatility/surface reconstruction.
