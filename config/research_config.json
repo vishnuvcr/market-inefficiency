@@ -1,0 +1,38 @@
+{
+  "protocol_version": "1.0",
+  "market": "India",
+  "asset_class": "listed_equity_derivatives",
+  "initial_universe": ["NIFTY_INDEX_OPTIONS"],
+  "expansion_policy": "add_other_liquid_index_or_stock_options_only_after_data_quality_review",
+  "base_currency": "INR",
+  "primary_timezones": ["Asia/Kolkata"],
+  "default_signal_frequency": "daily",
+  "intraday_data_required_for": ["realized_volatility", "microstructure", "execution"],
+  "validation": {
+    "purging": true,
+    "embargo": true,
+    "cpcv": true,
+    "dsr": true,
+    "pbo": true,
+    "untouched_holdout": true,
+    "protocol_dsr_candidate_threshold": 0.95,
+    "protocol_pbo_candidate_threshold": 0.10
+  },
+  "research_policy": {
+    "no_random_time_series_shuffle": true,
+    "point_in_time_features_only": true,
+    "net_of_cost_results_required": true,
+    "trial_count_required": true,
+    "negative_results_preserved": true
+  },
+  "promotion_states": [
+    "PROPOSED",
+    "DATA-READY",
+    "BASELINE",
+    "CANDIDATE",
+    "VALIDATED",
+    "PAPER",
+    "REJECTED",
+    "RETIRED"
+  ]
+}

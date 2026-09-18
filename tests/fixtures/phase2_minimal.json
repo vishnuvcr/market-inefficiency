@@ -1,0 +1,35 @@
+{
+  "dataset_id": "FIXTURE-PHASE2-001",
+  "snapshot_created_at": "2026-09-18T00:00:00Z",
+  "source": "synthetic",
+  "source_version": "1",
+  "preprocessing_version": "1.0",
+  "code_commit": "fixture",
+  "sha256": "fixture-only-not-a-market-dataset",
+  "row_count": 2,
+  "decision_timestamp": "2026-09-18T10:00:00Z",
+  "records": [
+    {
+      "timestamp": "2026-09-18T09:15:00Z",
+      "available_at": "2026-09-18T09:16:00Z",
+      "instrument_id": "SYNTH-1",
+      "open": 100.0,
+      "high": 101.0,
+      "low": 99.0,
+      "close": 100.5,
+      "volume": 1000,
+      "session_id": "20260918"
+    },
+    {
+      "timestamp": "2026-09-18T09:16:00Z",
+      "available_at": "2026-09-18T09:17:00Z",
+      "instrument_id": "SYNTH-1",
+      "open": 100.5,
+      "high": 101.5,
+      "low": 100.0,
+      "close": 101.0,
+      "volume": 1200,
+      "session_id": "20260918"
+    }
+  ]
+}

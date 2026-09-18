@@ -1,0 +1,148 @@
+name: Acquire Kaggle NIFTY research snapshot
+
+on:
+  push:
+    branches: ["research/v1.0-protocol"]
+    paths:
+      - ".github/workflows/acquire-kaggle-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install research dependencies
+        run: python -m pip install --disable-pip-version-check "kaggle>=2.0" "pandas>=2.2,<3" "numpy>=2,<3"
+      - name: Download NIFTY 50 minute file
+        run: |
+          mkdir -p data/kaggle_snapshot
+          kaggle datasets download debashis74017/nifty-50-minute-data -f "NIFTY 50_minute.csv" -p data/kaggle_snapshot --unzip -q
+      - name: Download India VIX minute file
+        run: |
+          kaggle datasets download debashis74017/nifty-50-minute-data -f "INDIA VIX_minute.csv" -p data/kaggle_snapshot --unzip -q
+      - name: Create immutable acquisition manifest
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, datetime
+          root=pathlib.Path('data/kaggle_snapshot'); files=[]
+          for p in sorted(root.glob('*')):
+              if p.is_file():
+                  h=hashlib.sha256()
+                  with p.open('rb') as f:
+                      for chunk in iter(lambda:f.read(1024*1024),b''): h.update(chunk)
+                  files.append({'file':p.name,'bytes':p.stat().st_size,'sha256':h.hexdigest()})
+          manifest={'dataset_id':'DS-KAGGLE-NIFTY','dataset':'debashis74017/nifty-50-minute-data','acquired_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'Kaggle public dataset','files':files}
+          pathlib.Path('data/kaggle_snapshot/MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps(manifest,indent=2))
+          PY
+      - name: Inspect acquired files
+        run: |
+          ls -lh data/kaggle_snapshot
+          python - <<'PY'
+          import pandas as pd, pathlib
+          for p in pathlib.Path('data/kaggle_snapshot').glob('*.csv'):
+              df=pd.read_csv(p); print(p.name, df.shape, list(df.columns)); print(df.head(2).to_string(index=False))
+          PY
+      - name: Build sessionized daily research bars
+        run: |
+          mkdir -p data/kaggle_analysis
+          python - <<'PY'
+          import pandas as pd, pathlib, re
+          from datetime import time
+
+          root=pathlib.Path('data/kaggle_snapshot')
+          matches=sorted(root.glob('NIFTY*minute.csv'))
+          if not matches:
+              raise SystemExit(f'No NIFTY minute CSV found. Files={sorted(p.name for p in root.iterdir())}')
+          src=matches[0]
+          df=pd.read_csv(src)
+          print("RAW COLUMNS:", list(df.columns))
+          print("RAW SHAPE:", df.shape)
+
+          def norm(s): return re.sub(r'[^a-z0-9]+','',str(s).strip().lower())
+          cmap={norm(c):c for c in df.columns}
+          def pick(names):
+              for n in names:
+                  if norm(n) in cmap: return cmap[norm(n)]
+              return None
+
+          ts=pick(['timestamp','datetime','date time','date_time','datetime_ist','datetimeist'])
+          date_col=pick(['date'])
+          time_col=pick(['time'])
+
+          if ts:
+              t=pd.to_datetime(df[ts],errors='coerce',format='mixed')
+          elif date_col:
+              raw=df[date_col].astype(str)
+              if time_col: raw=raw.str.strip()+' '+df[time_col].astype(str).str.strip()
+              t=pd.to_datetime(raw,errors='coerce',format='mixed',dayfirst=True)
+          else:
+              raise SystemExit(f'No timestamp/date column found. Columns={list(df.columns)}')
+
+          print("PARSED TIMESTAMPS:", int(t.notna().sum()), "/", len(t))
+          if t.notna().sum()==0:
+              print(df.head(5).to_string(index=False))
+              raise SystemExit("Timestamp parsing produced zero valid rows")
+
+          if getattr(t.dt,'tz',None) is None:
+              t=t.dt.tz_localize('Asia/Kolkata',ambiguous='NaT',nonexistent='NaT')
+          else:
+              t=t.dt.tz_convert('Asia/Kolkata')
+          df['ts']=t
+
+          cols={x:pick([x]) for x in ['open','high','low','close','volume']}
+          print("PRICE COLUMNS:", cols)
+          missing=[x for x in ['open','high','low','close'] if cols[x] is None]
+          if missing: raise SystemExit(f'Missing OHLC columns: {missing}; columns={list(df.columns)}')
+
+          for x,col in cols.items():
+              if col: df[x]=pd.to_numeric(df[col],errors='coerce')
+
+          df=df.dropna(subset=['ts','open','high','low','close']).sort_values('ts')
+          if len(df)==0: raise SystemExit("No valid OHLC rows after cleaning")
+
+          # NSE regular session: 09:15 through 15:30 IST.
+          mins=df['ts'].dt.hour*60+df['ts'].dt.minute
+          df=df[(mins>=9*60+15) & (mins<=15*60+30)].copy()
+          if len(df)==0: raise SystemExit("No observations inside 09:15-15:30 IST session")
+
+          df['session_date']=df['ts'].dt.date
+          agg={'open':'first','high':'max','low':'min','close':'last'}
+          if cols['volume']: agg['volume']='sum'
+          daily=df.groupby('session_date',sort=True).agg(agg).reset_index()
+
+          session_dates=pd.to_datetime(daily['session_date'])
+          daily['timestamp']=session_dates.dt.tz_localize('Asia/Kolkata').dt.tz_convert('UTC')
+          keep=['timestamp','open','high','low','close'] + (['volume'] if cols['volume'] else [])
+          daily[keep].to_csv('data/kaggle_analysis/NIFTY50_daily.csv',index=False)
+
+          print("SESSIONIZED ROWS:",len(daily))
+          print("RANGE:",daily['timestamp'].min(),daily['timestamp'].max())
+          print(daily[keep].head(3).to_string(index=False))
+          PY
+      - name: Run Phase 3 descriptive diagnostics
+        run: |
+          python scripts/phase3_stylized_facts.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_1_stylized_facts.json
+          python scripts/phase3_realized_volatility.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_2_realized_volatility.json
+          python scripts/phase3_volatility_persistence.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_3_volatility_persistence.json
+          python scripts/phase3_jump_diagnostics.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_4_jump_diagnostics.json
+          python scripts/phase3_memory_dependence.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_5_memory_dependence.json --bootstrap 100 --seed 20260918
+          python scripts/phase3_regime_segmentation.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_6_regime_segmentation.json --window 20
+          cp data/kaggle_snapshot/MANIFEST.json data/kaggle_analysis/
+      - name: Publish acquired snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-nifty-research-snapshot-${{ github.sha }}
+          path: |
+            data/kaggle_snapshot/
+            data/kaggle_analysis/
+          retention-days: 14

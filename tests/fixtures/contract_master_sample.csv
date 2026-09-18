@@ -1,0 +1,3 @@
+contract_id,underlying_id,expiry,strike,option_type,lot_size,effective_from,effective_to,available_at,source_version
+NIFTY|2026-09-24|CE|25000,NIFTY,2026-09-24T00:00:00Z,25000,CE,65,2026-09-01T00:00:00Z,2026-09-24T23:59:59Z,2026-09-18T16:00:00Z,synthetic-contract-master-v1
+NIFTY|2026-09-24|PE|25000,NIFTY,2026-09-24T00:00:00Z,25000,PE,65,2026-09-01T00:00:00Z,2026-09-24T23:59:59Z,2026-09-18T16:00:00Z,synthetic-contract-master-v1
