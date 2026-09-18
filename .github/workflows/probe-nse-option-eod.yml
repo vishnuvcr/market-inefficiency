@@ -6,6 +6,7 @@ on:
       - research/v1.0-protocol
     paths:
       - "scripts/probe_nse_fno_historical.py"
+      - "scripts/probe_nse_udiff_bhavcopy.py"
       - ".github/workflows/probe-nse-option-eod.yml"
   workflow_dispatch:
 
@@ -25,16 +26,21 @@ jobs:
           python-version: "3.12"
 
       - name: Install dependencies
-        run: python -m pip install --upgrade requests
+        run: python -m pip install --upgrade requests pandas
 
       - name: Probe public NSE historical option interface
         run: |
           python scripts/probe_nse_fno_historical.py
           test -s data/nse_probe/nse_option_eod_probe.json
 
-      - name: Upload probe artifact
+      - name: Validate NSE UDiFF Common Bhavcopy route
+        run: |
+          python scripts/probe_nse_udiff_bhavcopy.py
+          test -s data/nse_probe/udiff_bhavcopy_probe.json
+
+      - name: Upload probe artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: nse-option-eod-probe-${{ github.sha }}
-          path: data/nse_probe/nse_option_eod_probe.json
+          name: nse-option-eod-probes-${{ github.sha }}
+          path: data/nse_probe/*.json
           if-no-files-found: error
