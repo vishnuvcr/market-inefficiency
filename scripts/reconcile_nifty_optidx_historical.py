@@ -118,7 +118,15 @@ def main() -> None:
     udiff = x[x["trade_date"] >= "2024-07-08"]
 
     available_at_missing = int(x["available_at"].isna().sum())
-    available_at_before_trade = int((x["available_at"] < x["trade_date"]).fillna(False).sum())
+    # trade_date is a calendar date (naive), while available_at may carry an
+    # explicit timezone.  Compare calendar dates for the PIT gate so that an
+    # EOD publication timestamp such as 23:59:59+05:30 is not compared to
+    # naive midnight and does not trigger a false timezone error.
+    trade_calendar_day = x["trade_date"].dt.date
+    available_calendar_day = x["available_at"].dt.date
+    available_at_before_trade = int(
+        (available_calendar_day < trade_calendar_day).fillna(False).sum()
+    )
     available_at_present_pct = float(x["available_at"].notna().mean() * 100)
 
     checks = {
