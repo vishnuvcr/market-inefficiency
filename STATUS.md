@@ -18,7 +18,7 @@ Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now b
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
-| 4. Option-market hypotheses | 🟡 In progress | 30% | Phase 4A reconciliation + PIT audit |
+| 4. Option-market hypotheses | 🟡 In progress | 40% | Phase 4A PIT audit |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe option/underlying regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
@@ -68,6 +68,10 @@ The acquisition workflow now has a dedicated reconciliation script and workflow.
 
 The reconciliation workflow was added to the research branch and the protocol PR was merged into `main` so the workflow is eligible for GitHub's `workflow_run` event. It also now runs on research-branch updates and automatically selects the latest successful acquisition run when no explicit run ID is supplied, avoiding another market-data download.
 
+Full reconciliation Run #3 (GitHub Actions run `35374383806`, commit `2d2a684f2d7498cbbfefbe406a6fb06e00dc6e6f`) completed successfully against immutable Acquisition Run #17 (`35355477098`). The reconciliation report passed all hard gates: 7/7 year manifests present, 1,511 validated archive days, 1,511 normalized files/dates, 2,859,228 normalized rows, zero duplicate contract keys, zero file errors, zero route errors, zero missing/unexpected normalized dates, zero negative prices, zero expiry-before-trade rows, zero non-positive strikes, zero missing `available_at` rows, and zero `available_at)-before-trade rows. The report also records 85 weekday no-archive dates for authoritative calendar reconciliation.
+
+The previous Run #2 failure was a timezone-comparison implementation error rather than a data-quality failure: `available_at` was timezone-aware while `trade_date` was timezone-naive. The reconciler now compares their calendar dates for the current PIT gate.
+
 A local spot validation of the downloaded 2020–2023 artifacts found:
 - 1,902,031 normalized rows across 924 files;
 - zero missing `available_at` values;
@@ -83,9 +87,9 @@ Weekday no-archive dates are reported rather than automatically failed because a
 
 ## Immediate next gates
 
-1. Complete the full 2020–2026 GitHub reconciliation.
-2. Reconcile weekday no-archive dates against the authoritative NSE trading calendar.
-3. Complete the PIT audit for `available_at`, lot-size history, underlying-price availability and risk-free inputs.
+1. Reconcile the 85 weekday no-archive dates against authoritative NSE F&O trading-holiday calendars.
+2. Complete the PIT audit for `available_at` publication timing and source-level availability assumptions.
+3. Audit lot-size history, underlying-price availability and risk-free inputs.
 4. Freeze the normalized option-EOD research snapshot only after the reconciliation/PIT gates pass.
 5. Add point-in-time lot-size and risk-free inputs.
 6. Begin Phase 4B implied-volatility/surface reconstruction.
