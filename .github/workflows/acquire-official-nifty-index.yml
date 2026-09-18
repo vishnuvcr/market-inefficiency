@@ -1,4 +1,5 @@
 name: Acquire official NIFTY 50 underlying
+# Phase 4A CI smoke validation path
 
 on:
   workflow_dispatch:
