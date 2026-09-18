@@ -69,22 +69,23 @@ def parse_num(v):
 
 
 def parse_sheet(path: Path, tenor: str) -> pd.DataFrame:
-    raw = pd.read_excel(path, sheet_name=TENOR_SHEETS.index(tenor), header=None)
+    excel = pd.ExcelFile(path)
+    sheet_name = excel.sheet_names[TENOR_SHEETS.index(tenor)]
+    raw = pd.read_excel(excel, sheet_name=sheet_name, header=None)
     records = []
     for _, row in raw.iterrows():
-        cell1 = str(row.iloc[1]).strip() if len(row) > 1 and pd.notna(row.iloc[1]) else ""
-        if not DATE_RE.match(cell1):
+        cell1 = row.iloc[1] if len(row) > 1 else None
+        auction_date = parse_rbi_date(cell1)
+        if pd.isna(auction_date):
             continue
+        issue_value = row.iloc[2] if len(row) > 2 else None
+        issue_date = parse_rbi_date(issue_value)
         records.append(
             {
                 "tenor_days": TENORS[tenor],
                 "tenor_label": tenor,
-                "auction_date": pd.to_datetime(cell1, format="%d-%b-%Y", errors="coerce"),
-                "issue_date": pd.to_datetime(
-                    str(row.iloc[2]).strip() if len(row) > 2 and pd.notna(row.iloc[2]) else "",
-                    format="%d-%b-%Y",
-                    errors="coerce",
-                ),
+                "auction_date": auction_date,
+                "issue_date": issue_date,
                 "notified": parse_num(row.iloc[3]),
                 "cutoff_price": parse_num(row.iloc[11]),
                 "yield_pct": parse_num(row.iloc[12]),
