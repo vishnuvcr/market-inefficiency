@@ -9,7 +9,7 @@ Last updated: 2026-09-18
 Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
 
 Overall Phase 2 completion: **~55%**  
-Phase 3.1–3.4 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3.1–3.5 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3.1–3.4 implementation: **complete as deterministic diagnostic scaffolds
 | 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 40% | Run Phase 3.1–3.4 against validated NIFTY/VIX snapshot |
+| 3. Stylized facts | 🟡 Scaffold implemented | 50% | Run Phase 3.1–3.5 against validated NIFTY/VIX snapshot |
 | 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
@@ -28,7 +28,7 @@ Phase 3.1–3.4 implementation: **complete as deterministic diagnostic scaffolds
 
 ## Phase 3.1 implementation
 
-Added scripts/phase3_stylized_facts.py and its deterministic test.
+Added `scripts/phase3_stylized_facts.py` and its deterministic test.
 
 The baseline reports:
 - observation coverage and chronology
@@ -45,7 +45,7 @@ Added `scripts/phase3_realized_volatility.py` and its deterministic CI test. The
 
 ## Data evidence boundary
 
-The selected Kaggle source is debashis74017/nifty-50-minute-data, described by its publisher as NIFTY 50 index OHLC minute/daily data with India VIX available in the dataset. Kaggle discussion material also states that F&O intraday data are not provided there and that bid/ask data require a separate data source. These observations reinforce the repository's existing boundary: Kaggle can support underlying/context diagnostics, but cannot satisfy the option quote/depth execution-data requirement. citeturn0search0turn0search1
+The selected Kaggle source is debashis74017/nifty-50-minute-data, described by its publisher as NIFTY 50 index OHLC minute/daily data with India VIX available in the dataset. Kaggle discussion material also states that F&O intraday data are not provided there and that bid/ask data require a separate data source. These observations reinforce the repository's existing boundary: Kaggle can support underlying/context diagnostics, but cannot satisfy the option quote/depth execution-data requirement.
 
 No real-market statistic is reported yet because the exact external snapshot bytes have not been acquired and hashed in the research runtime.
 
@@ -57,13 +57,24 @@ Added `scripts/phase3_volatility_persistence.py` and its deterministic CI test. 
 
 Added `scripts/phase3_jump_diagnostics.py` and its deterministic CI test. The diagnostic provides a robust standardized-return jump proxy, a bipower-variation-style excess-variation proxy, and a Parkinson range-based excess-variation proxy. A dedicated six-observation fixture now keeps the jump test independent of the five-row baseline fixture. The implementation remains descriptive-only; a jump proxy is not evidence of tradable mispricing.
 
+## Phase 3.5 implementation
+
+Added `scripts/phase3_memory_dependence.py` and its deterministic test. The scaffold computes:
+- DFA Hurst exponent on log returns
+- generalized MFDFA exponents for q = -2, -1, 0, 1, 2
+- multifractal-width diagnostic
+- deterministic shuffled-return surrogate control
+- moving-block bootstrap interval for the DFA H estimate
+
+The estimator, scale range, bootstrap seed and requested replicate count are recorded in the output. The result is explicitly diagnostic-only. Deviation from H = 0.5 or a non-zero multifractal width is not treated as evidence of exploitable inefficiency.
+
 ## Phase 3 roadmap
 
 1. 3.1 Stylized-fact baseline — scaffold complete.
-2. 3.2 Realized volatility — close-to-close, Parkinson, Garman–Klass and Yang–Zhang comparison where fields support them.
-3. 3.3 Volatility persistence — ACF/PACF, rolling volatility, clustering diagnostics and explicit uncertainty benchmark.
-4. 3.4 Jump diagnostics — multiple jump estimators and sensitivity to sampling frequency. Scaffold complete; real-data and frequency-sensitivity validation pending.
-5. 3.5 Memory/dependence — Hurst/MFDFA plus estimator uncertainty and surrogate/random-walk controls.
+2. 3.2 Realized volatility — scaffold complete; real-data/session-level validation pending.
+3. 3.3 Volatility persistence — scaffold complete; robust real-data uncertainty validation pending.
+4. 3.4 Jump diagnostics — scaffold complete; real-data and frequency-sensitivity validation pending.
+5. 3.5 Memory/dependence — scaffold complete; real-data estimator/surrogate validation pending.
 6. 3.6 Regime segmentation — descriptive, non-predictive segmentation before HMM/GMM.
 7. 3.7 Discovery report — translate only robust, pre-specified findings into Phase 4 hypotheses.
 
@@ -76,7 +87,7 @@ Phase 3 findings are descriptive evidence only. No apparent pattern will be labe
 1. Acquire/hash the exact Kaggle snapshot.
 2. Normalize NIFTY and India VIX with the existing adapter.
 3. Run quality/exclusion diagnostics and snapshot-manifest generation.
-4. Execute Phase 3.1 on the validated real snapshot.
-5. Execute Phase 3.2–3.4 on the validated real snapshot after explicit sessionization/sampling choices are fixed.
-6. Implement Phase 3.5 memory/dependence diagnostics with estimator and surrogate controls.
+4. Fix and document sessionization/sampling conventions before applying intraday OHLC estimators.
+5. Execute Phase 3.1–3.5 on the validated real snapshot.
+6. Implement Phase 3.6 descriptive regime segmentation.
 7. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
