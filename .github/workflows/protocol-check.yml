@@ -183,3 +183,62 @@ jobs:
           name: phase5-multimodal-prediction-${{ github.sha }}
           path: ${{ runner.temp }}/phase5
           retention-days: 90
+
+  phase6-strategy-screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Phase 6 dependencies
+        run: python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" "scikit-learn>=1.5,<2"
+      - name: Download frozen Phase 4B IV artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/iv_artifact"
+          curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" -o "${RUNNER_TEMP}/iv.zip" "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10567387234/zip"
+          unzip -q "${RUNNER_TEMP}/iv.zip" -d "${RUNNER_TEMP}/iv_artifact"
+          test -n "$(find "${RUNNER_TEMP}/iv_artifact" -name 'iv_observations_*.csv.gz' -print -quit)"
+      - name: Download frozen official NIFTY artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p "${RUNNER_TEMP}/underlying_artifact"
+          curl -fsSL -H "Authorization: Bearer ${GH_TOKEN}" -H "Accept: application/vnd.github+json" -o "${RUNNER_TEMP}/underlying.zip" "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10564212363/zip"
+          unzip -q "${RUNNER_TEMP}/underlying.zip" -d "${RUNNER_TEMP}/underlying_artifact"
+          UNDERLYING="$(find "${RUNNER_TEMP}/underlying_artifact" -type f \( -name 'nifty50_ohlc.csv' -o -name '*nifty50*ohlc*.csv' \) -print -quit)"
+          test -n "${UNDERLYING}"
+          echo "UNDERLYING=${UNDERLYING}" >> "${GITHUB_ENV}"
+      - name: Run Phase 6 strategy screen
+        run: |
+          python scripts/phase6_strategy_screen.py \
+            --iv-root "${RUNNER_TEMP}/iv_artifact" \
+            --underlying "${UNDERLYING}" \
+            --output "${RUNNER_TEMP}/phase6"
+      - name: Validate Phase 6 report
+        run: |
+          python - <<'PY'
+          import json, os
+          from pathlib import Path
+          r=json.loads((Path(os.environ["RUNNER_TEMP"]) / "phase6" / "PHASE6_STRATEGY_SCREEN_REPORT.json").read_text())
+          assert r["status"]=="PASS", r
+          assert r["split"]["final_holdout_n"] >= 50, r
+          assert r["validation_selection"]["selected_candidate"] in r["candidate_set"], r
+          print("PHASE6_STRATEGY_SCREEN: PASS")
+          print(json.dumps({
+              "selected_candidate": r["validation_selection"]["selected_candidate"],
+              "validation_sharpe": r["validation_selection"]["candidate_metrics"][r["validation_selection"]["selected_candidate"]]["sharpe"],
+              "final": r["final_holdout"]["selected_candidate_cost_sensitivity"]
+          }, indent=2))
+          PY
+      - name: Upload Phase 6 artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase6-strategy-screen-${{ github.sha }}
+          path: ${{ runner.temp }}/phase6
+          retention-days: 90
