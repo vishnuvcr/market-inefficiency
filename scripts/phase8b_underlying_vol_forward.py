@@ -25,7 +25,7 @@ CANDIDATES=["highvol_trend","highvol_meanrev","state_switch"]
 THRESH=0.55
 COSTS=(5,10,20)
 
-def build(path:Path):
+def load_raw(path:Path):
     x=pd.read_csv(path)
     dc=next(c for c in ["date","DATE","CH_TIMESTAMP","TIMESTAMP"] if c in x)
     cc=next(c for c in ["close","CLOSE","Close"] if c in x)
@@ -33,7 +33,10 @@ def build(path:Path):
     x["date"]=pd.to_datetime(x["date"],errors="coerce")
     x["close"]=pd.to_numeric(x["close"],errors="coerce")
     x=x.dropna().query("close>0").drop_duplicates("date").sort_values("date").reset_index(drop=True)
-    x=x[~x.date.dt.strftime("%Y-%m-%d").isin(GAPS)].copy()
+    return x[~x.date.dt.strftime("%Y-%m-%d").isin(GAPS)].copy()
+
+def featureize(x:pd.DataFrame):
+    x=x.copy()
     x["ret1"]=np.log(x.close/x.close.shift(1)); x["ret5"]=np.log(x.close/x.close.shift(5))
     x["ret20"]=np.log(x.close/x.close.shift(20)); x["ret60"]=np.log(x.close/x.close.shift(60))
     for w in (5,20,60):
@@ -48,7 +51,6 @@ def build(path:Path):
     rv5=x.ret1.shift(-1).rolling(5).apply(lambda z: np.sum(np.asarray(z)**2)*252.0/len(z),raw=False).shift(-4)
     x["target_vol_expand5"]=(rv5>x.rv_20**2).astype(float)
     return x
-
 def model(): return make_pipeline(SimpleImputer(strategy="median"),StandardScaler(),LogisticRegression(C=0.5,max_iter=3000,solver="lbfgs"))
 
 def pos(name,row,p):
@@ -104,8 +106,9 @@ def cpcv(dev,cost):
 
 def main():
     ap=argparse.ArgumentParser(); ap.add_argument("--old",type=Path,required=True); ap.add_argument("--new",type=Path,required=True); ap.add_argument("--forward-start",required=True); ap.add_argument("--out",type=Path,required=True)
-    a=ap.parse_args(); old=build(a.old); new=build(a.new)
+    a=ap.parse_args(); old=load_raw(a.old); new=load_raw(a.new)
     u=pd.concat([old,new]).drop_duplicates("date").sort_values("date").reset_index(drop=True)
+    u=featureize(u)
     fs=pd.Timestamp(a.forward_start); data=u.dropna(subset=FEATURES+["target_ret1","target_vol_expand5"]).copy()
     dev=data[data.date<fs].copy(); fwd=data[data.date>=fs].copy()
     m=model(); m.fit(dev[FEATURES],dev.target_vol_expand5.astype(int))
