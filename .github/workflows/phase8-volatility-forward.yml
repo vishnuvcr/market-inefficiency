@@ -76,8 +76,8 @@ jobs:
           python scripts/acquire_nse_nifty_optidx.py \
             --start 2026-05-15 \
             --end 2026-09-18 \
-            --workers 2 \
-            --delay-seconds 1.25
+            --workers 3 \
+            --delay-seconds 0.30
 
       - name: Validate fresh option snapshot
         run: |
