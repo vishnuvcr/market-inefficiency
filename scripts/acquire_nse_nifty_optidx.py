@@ -14,6 +14,7 @@ import io
 import json
 import time
 import zipfile
+import threading
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
@@ -25,8 +26,10 @@ BASE = "https://archives.nseindia.com"
 FALLBACK_BASE = "https://nsearchives.nseindia.com"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128 Safari/537.36",
-    "Accept": "*/*",
+    "Accept": "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
     "Referer": "https://www.nseindia.com/all-reports-derivatives",
+    "Accept-Language": "en-US,en;q=0.9",
+    "Connection": "keep-alive",
 }
 LEGACY_REQUIRED = ["TIMESTAMP", "INSTRUMENT", "SYMBOL", "EXPIRY_DT", "STRIKE_PR",
                    "OPTION_TYP", "OPEN", "HIGH", "LOW", "CLOSE", "LTP",
@@ -56,7 +59,22 @@ def url_for(d: date) -> tuple[str, str]:
     return ("legacy", f"{BASE}/content/historical/DERIVATIVES/{d:%Y}/{month}/{filename}")
 
 
-def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
+REQUEST_LOCK = threading.Lock()
+LAST_REQUEST_AT = 0.0
+
+
+def rate_limited_get(session: requests.Session, url: str, timeout: int, delay_seconds: float):
+    global LAST_REQUEST_AT
+    with REQUEST_LOCK:
+        wait = delay_seconds - (time.monotonic() - LAST_REQUEST_AT)
+        if wait > 0:
+            time.sleep(wait)
+        response = session.get(url, timeout=timeout)
+        LAST_REQUEST_AT = time.monotonic()
+        return response
+
+
+def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_seconds: float) -> dict:
     route, url = url_for(d)
     s = requests.Session()
     s.headers.update(HEADERS)
@@ -72,7 +90,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
             r = None
             for candidate in candidate_urls:
                 try:
-                    rr = s.get(candidate, timeout=60)
+                    rr = rate_limited_get(s, candidate, timeout=60, delay_seconds=delay_seconds)
                     last_status = rr.status_code
                     if rr.status_code == 200:
                         r = rr
@@ -174,7 +192,13 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
         except Exception as exc:
             rec["error"] = f"{type(exc).__name__}: {exc}"
             if attempt < retries:
-                time.sleep(2 ** attempt)
+                status = rec.get("http_status")
+                if status in (403, 429):
+                    time.sleep(5 * (attempt + 1))
+                elif isinstance(status, int) and status >= 500:
+                    time.sleep(3 * (attempt + 1))
+                else:
+                    time.sleep(2 ** attempt)
             else:
                 rec["status"] = "ERROR"
                 return rec
@@ -187,7 +211,9 @@ def main() -> None:
     ap.add_argument("--end", default="2026-05-14")
     ap.add_argument("--output", default="data/nse_option_snapshot")
     ap.add_argument("--workers", type=int, default=2)
-    ap.add_argument("--retries", type=int, default=2)
+    ap.add_argument("--retries", type=int, default=4)
+    ap.add_argument("--delay-seconds", type=float, default=1.25,
+                    help="Minimum delay between NSE archive HTTP requests in this process.")
     args = ap.parse_args()
 
     root = Path(args.output)
@@ -198,7 +224,7 @@ def main() -> None:
     dates = list(daterange(date.fromisoformat(args.start), date.fromisoformat(args.end)))
     records = []
     with ThreadPoolExecutor(max_workers=max(1, args.workers)) as ex:
-        futs = {ex.submit(fetch_one, d, raw_dir, norm_dir, args.retries): d for d in dates}
+        futs = {ex.submit(fetch_one, d, raw_dir, norm_dir, args.retries, args.delay_seconds): d for d in dates}
         for fut in as_completed(futs):
             records.append(fut.result())
     records.sort(key=lambda x: x["date"])
@@ -210,7 +236,7 @@ def main() -> None:
         "snapshot_created_at": datetime.now(timezone.utc).isoformat(),
         "source": "NSE F&O daily bhavcopy archives",
         "source_version": "legacy+UDiFF route by official format boundary",
-        "preprocessing_version": "phase4a-nifty-optidx-v1",
+        "preprocessing_version": "phase4a-nifty-optidx-v2-rate-limited",
         "start": args.start,
         "end": args.end,
         "records": records,
