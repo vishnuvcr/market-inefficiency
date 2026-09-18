@@ -1,6 +1,6 @@
 # Research Status
 
-Last updated: 2026-09-18
+Last updated: 2026-09-18 23:xx IST
 
 ## Overall phase
 
@@ -92,6 +92,18 @@ Weekday no-archive dates are reported rather than automatically failed because a
 Official NSE lot-size provenance now covers the main NIFTY transitions: 75 to 50 for July 2021 contracts, 50 retained in 2023, 50 to 25 from April 26, 2024 contracts, 25 to 75 for new contracts introduced from November 20, 2024, and the subsequent 75 to 65 transition beginning with revised 2026 expiries under the October 2025 circular. The 2025 rule is explicitly contract-cycle dependent: weekly/monthly existing contracts retain 75 through the December 30, 2025 expiry, while the first revised weekly/monthly expiries are January 6/27, 2026; existing quarterly/half-yearly contracts revise EOD December 30, 2025. Contract-level transition rules mean lot size must be joined by contract/expiry, not merely by trade date. citeturn5search4turn6search15turn4view0 citeturn3search43turn3search42turn4search0turn3search45
 
 RBI documents 91-day Treasury Bills as short-term Government instruments and publishes auction cut-off yields. These are a candidate risk-free source, but publication timing and the interpolation/carry-forward rule must be frozen before use in a PIT feature. citeturn5search3turn5search0
+
+
+## Phase 4A — external PIT input layer implemented
+
+The remaining external-input gate is now operationally specified without inventing missing market data:
+
+- `data/phase4a/pit_external_source_registry.csv` records the authoritative source, period, PIT availability rule and current status for the legacy NIFTY index, lot-size mapping and RBI risk-free inputs.
+- `docs/PHASE4A_EXTERNAL_INPUTS.md` freezes the acquisition/validation requirements, including publication-time handling and risk-free interpolation rules.
+- `scripts/validate_phase4a_external_inputs.py` provides deterministic schema, coverage, duplicate and positivity checks and records SHA-256 hashes for the three external inputs.
+- The validator deliberately does **not** infer, backfill or silently download data; the final PIT snapshot must be based on auditable source files.
+
+This advances the engineering gate but does **not** pass the PIT audit. Phase 4B remains blocked until the actual external input files are acquired, validated, timestamped for PIT use, and joined to the option snapshot.
 
 ## Immediate next gates
 
