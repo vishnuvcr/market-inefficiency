@@ -38,6 +38,17 @@ jobs:
       - name: Install dependencies
         run: python -m pip install --disable-pip-version-check requests pandas
 
+      - name: Preflight legacy mirror
+        if: matrix.year == 2020
+        run: |
+          python - <<'PY'
+          import requests
+          url = "https://raw.githubusercontent.com/SantoshSrinivas79/NSE-FNO-Data-bank/main/data/2020/04/fo13APR2020bhav.csv.zip"
+          r = requests.get(url, timeout=30, stream=True)
+          print("legacy mirror preflight:", r.status_code, url)
+          r.raise_for_status()
+          PY
+
       - name: Resolve partition dates
         id: dates
         env:
