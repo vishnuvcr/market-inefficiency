@@ -59,7 +59,11 @@ jobs:
           import pandas as pd, pathlib, re
           from datetime import time
 
-          src=pathlib.Path('data/kaggle_snapshot/NIFTY 50_minute.csv')
+          root=pathlib.Path('data/kaggle_snapshot')
+          matches=sorted(root.glob('NIFTY*minute.csv'))
+          if not matches:
+              raise SystemExit(f'No NIFTY minute CSV found. Files={sorted(p.name for p in root.iterdir())}')
+          src=matches[0]
           df=pd.read_csv(src)
           print("RAW COLUMNS:", list(df.columns))
           print("RAW SHAPE:", df.shape)
@@ -138,5 +142,7 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: kaggle-nifty-research-snapshot-${{ github.sha }}
-          path: data/kaggle_snapshot/
+          path: |
+            data/kaggle_snapshot/
+            data/kaggle_analysis/
           retention-days: 14
