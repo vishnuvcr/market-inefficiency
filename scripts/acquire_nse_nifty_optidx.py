@@ -131,7 +131,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
                     "last_price": pd.to_numeric(df["LTP"], errors="coerce"),
                     "settlement": pd.to_numeric(df["SETTLE_PR"], errors="coerce"),
                     "volume": pd.to_numeric(df["CONTRACTS"], errors="coerce"),
-                    "turnover_lakh": pd.to_numeric(df["VAL_INLAKH"], errors="coerce"),
+                    "turnover": pd.to_numeric(df["VAL_INLAKH"], errors="coerce") * 100000,
                     "open_interest": pd.to_numeric(df["OPEN_INT"], errors="coerce"),
                     "change_in_oi": pd.to_numeric(df["CHG_IN_OI"], errors="coerce"),
                     "underlying_price": pd.NA,
