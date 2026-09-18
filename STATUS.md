@@ -60,19 +60,32 @@ Implemented:
 
 The acquisition layer preserves original ZIP files, validates schemas, extracts NIFTY CE/PE rows, normalizes common fields, records SHA-256 hashes and creates an immutable snapshot manifest. Legacy and UDiFF formats are explicitly handled separately rather than silently assumed identical.
 
-The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. Run #17 completed successfully for all seven yearly partitions (2020–2026). It produced 1,511 validated archive days and 2,859,228 normalized NIFTY CE/PE rows across the immutable yearly artifacts. The historical build is partitioned by calendar year to keep artifacts reproducible and bounded. The first historical runs exposed a legacy-source acquisition problem after the URL casing correction: acquisition could complete without producing normalized files because source-level outcomes were not sufficiently visible. The downloader now records per-source HTTP/error diagnostics, performs ZIP integrity checks, uses clean headers for the secondary mirror, and fails explicitly on ERROR days or zero validated days. The workflow now runs a real one-session legacy smoke test (2020-04-13) before allowing 2020–2024 partitions to start; 2025–2026 remain independently eligible. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build. The latest smoke run (workflow #16) reached the archive successfully (HTTP 200, 488,594 bytes, valid SHA-256) but failed normalization because the 2020 legacy CSV does not contain the `LTP` column. This is a schema-compatibility failure, not an archive-access failure. The downloader has now been patched to treat legacy LTP as an optional source field: if an explicit legacy last-price column exists it is retained; otherwise `last_price` remains NA rather than substituting `CLOSE`. The raw ZIP is still preserved and the normalized record will expose `last_price_source` provenance.
+The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. Run #17 completed successfully for all seven yearly partitions (2020–2026). It produced 1,511 validated archive days and 2,859,228 normalized NIFTY CE/PE rows across the immutable yearly artifacts. The historical build is partitioned by calendar year to keep artifacts reproducible and bounded. The first historical runs exposed a legacy-source acquisition problem after the URL casing correction: acquisition could complete without producing normalized files because source-level outcomes were not sufficiently visible. The downloader now records per-source HTTP/error diagnostics, performs ZIP integrity checks, uses clean headers for the secondary mirror, and fails explicitly on ERROR days or zero validated days. The workflow now runs a real one-session legacy smoke test (2020-04-13) before allowing 2020–2024 partitions to start; 2025–2026 remain independently eligible. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build. The legacy CSV does not contain the `LTP` column. This is treated as a schema limitation: `last_price` remains NA rather than substituting `CLOSE`. The raw ZIP is still preserved and the normalized record exposes provenance.
 
 ## Phase 4A — cross-year reconciliation / PIT audit
 
-The acquisition workflow now has a dedicated reconciliation script and workflow. The reconciler checks year coverage, manifest/file agreement, cross-year duplicate contract keys, route/date-boundary consistency, normalized schema errors, expiry/strike integrity, source-tier provenance, legacy-vs-UDiFF missingness, and calendar-gap diagnostics. Weekday no-archive dates are reported rather than automatically failed because authoritative NSE holiday/calendar reconciliation is still required. The PIT audit will also review the conservative EOD `available_at` assumption before any forward-looking hypothesis test.
+The acquisition workflow now has a dedicated reconciliation script and workflow. The reconciler checks year coverage, manifest/file agreement, cross-year duplicate contract keys, route/date-boundary consistency, normalized schema errors, expiry/strike integrity, source-tier provenance, legacy-vs-UDiFF missingness, calendar-gap diagnostics, and the required `available_at` PIT field.
 
-The reconciliation workflow is configured to consume the immutable artifacts from a successful acquisition run without re-downloading market data.
+The reconciliation workflow was added to the research branch and the protocol PR was merged into `main` so the workflow is eligible for GitHub's `workflow_run` event. It also now runs on research-branch updates and automatically selects the latest successful acquisition run when no explicit run ID is supplied, avoiding another market-data download.
+
+A local spot validation of the downloaded 2020–2023 artifacts found:
+- 1,902,031 normalized rows across 924 files;
+- zero missing `available_at` values;
+- zero `available_at` timestamps before trade date;
+- zero duplicate contract keys;
+- zero negative-price rows;
+- zero expiry-before-trade rows;
+- zero non-positive strikes.
+
+These are partial checks only; they do **not** replace the full 2020–2026 GitHub reconciliation.
+
+Weekday no-archive dates are reported rather than automatically failed because authoritative NSE holiday/calendar reconciliation is still required. The PIT audit will review the conservative EOD `available_at` assumption before any forward-looking hypothesis test.
 
 ## Immediate next gates
 
-1. Complete cross-year reconciliation of the immutable 2020–2026 artifacts.
+1. Complete the full 2020–2026 GitHub reconciliation.
 2. Reconcile weekday no-archive dates against the authoritative NSE trading calendar.
 3. Complete the PIT audit for `available_at`, lot-size history, underlying-price availability and risk-free inputs.
 4. Freeze the normalized option-EOD research snapshot only after the reconciliation/PIT gates pass.
-4. Add point-in-time lot-size and risk-free inputs.
-5. Begin Phase 4B implied-volatility/surface reconstruction.
+5. Add point-in-time lot-size and risk-free inputs.
+6. Begin Phase 4B implied-volatility/surface reconstruction.
