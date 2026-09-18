@@ -74,7 +74,7 @@ Subphases:
 ### Phase 3 — Stylized facts and inefficiency discovery
 **Goal:** determine whether the market characteristics assumed by the protocol are actually present in the chosen universe.
 
-**Status: ~30% — Phase 3.1–3.3 diagnostic scaffolds implemented; real-data evidence remains gated on validated immutable snapshots.**
+**Status: ~40% — Phase 3.1–3.4 deterministic diagnostic scaffolds implemented; real-data evidence remains gated on validated immutable snapshots.**
 
 Subphases:
 - 3.1 **Stylized-fact baseline — scaffold complete.** Coverage, returns, tails, absolute-return autocorrelation and drawdown diagnostics.
