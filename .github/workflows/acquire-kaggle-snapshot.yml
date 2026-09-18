@@ -1,0 +1,60 @@
+name: Acquire Kaggle NIFTY research snapshot
+
+on:
+  push:
+    branches: ["research/v1.0-protocol"]
+    paths:
+      - ".github/workflows/acquire-kaggle-snapshot.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install Kaggle CLI
+        run: python -m pip install --disable-pip-version-check "kaggle>=2.0"
+      - name: Download NIFTY 50 minute file
+        run: |
+          mkdir -p data/kaggle_snapshot
+          kaggle datasets download debashis74017/nifty-50-minute-data -f "NIFTY 50_minute.csv" -p data/kaggle_snapshot --unzip -q
+      - name: Download India VIX minute file
+        run: |
+          kaggle datasets download debashis74017/nifty-50-minute-data -f "INDIA VIX_minute.csv" -p data/kaggle_snapshot --unzip -q
+      - name: Create immutable acquisition manifest
+        run: |
+          python - <<'PY'
+          import hashlib, json, pathlib, datetime
+          root=pathlib.Path('data/kaggle_snapshot'); files=[]
+          for p in sorted(root.glob('*')):
+              if p.is_file():
+                  h=hashlib.sha256()
+                  with p.open('rb') as f:
+                      for chunk in iter(lambda:f.read(1024*1024),b''): h.update(chunk)
+                  files.append({'file':p.name,'bytes':p.stat().st_size,'sha256':h.hexdigest()})
+          manifest={'dataset_id':'DS-KAGGLE-NIFTY','dataset':'debashis74017/nifty-50-minute-data','acquired_at_utc':datetime.datetime.now(datetime.timezone.utc).isoformat(),'source':'Kaggle public dataset','files':files}
+          pathlib.Path('data/kaggle_snapshot/MANIFEST.json').write_text(json.dumps(manifest,indent=2)+'\n')
+          print(json.dumps(manifest,indent=2))
+          PY
+      - name: Inspect acquired files
+        run: |
+          ls -lh data/kaggle_snapshot
+          python - <<'PY'
+          import pandas as pd, pathlib
+          for p in pathlib.Path('data/kaggle_snapshot').glob('*.csv'):
+              df=pd.read_csv(p); print(p.name, df.shape, list(df.columns)); print(df.head(2).to_string(index=False))
+          PY
+      - name: Publish acquired snapshot artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: kaggle-nifty-research-snapshot-${{ github.sha }}
+          path: data/kaggle_snapshot/
+          retention-days: 14
