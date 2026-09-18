@@ -1,0 +1,73 @@
+name: Phase 4C — NIFTY variance-risk-premium diagnostics
+
+on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - scripts/analyze_phase4c_vrp.py
+      - .github/workflows/analyze-phase4c-vrp.yml
+  workflow_dispatch:
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas numpy
+
+      - name: Resolve latest successful Phase 4B and underlying runs
+        id: runs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          iv_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Phase 4B — reconstruct NIFTY implied-volatility surfaces"             --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          und_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          test -n "$iv_run"
+          test -n "$und_run"
+          echo "iv_run=$iv_run" >> "$GITHUB_OUTPUT"
+          echo "und_run=$und_run" >> "$GITHUB_OUTPUT"
+
+      - name: Download Phase 4B IV artifact
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.iv_run }}
+          pattern: phase4b-iv-surfaces-*
+          path: data/phase4c_iv
+          merge-multiple: true
+
+      - name: Download official NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.runs.outputs.und_run }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase4c_inputs/underlying
+          merge-multiple: true
+
+      - name: Run Phase 4C diagnostics
+        run: |
+          python scripts/analyze_phase4c_vrp.py             --surface data/phase4c_iv/iv_surface_daily.csv.gz             --underlying data/phase4c_inputs/underlying/nifty50_ohlc.csv             --output data/phase4c_report
+
+      - name: Upload Phase 4C report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4c-vrp-report-${{ github.sha }}
+          path: data/phase4c_report/
+          if-no-files-found: error
+          retention-days: 90
