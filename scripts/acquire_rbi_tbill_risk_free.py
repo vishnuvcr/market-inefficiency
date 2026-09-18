@@ -50,6 +50,20 @@ TENOR_SHEETS = ["91-day", "182-day", "364-day"]
 DATE_RE = re.compile(r"^\d{2}-[A-Z][a-z]{2}-\d{4}$")
 
 
+def parse_rbi_date(value):
+    if value is None or (isinstance(value, float) and pd.isna(value)):
+        return pd.NaT
+    if isinstance(value, (pd.Timestamp, date, datetime)):
+        return pd.Timestamp(value)
+    s = str(value).strip()
+    if not s:
+        return pd.NaT
+    parsed = pd.to_datetime(s, errors="coerce")
+    if pd.isna(parsed):
+        parsed = pd.to_datetime(s, errors="coerce", format="%d-%b-%Y")
+    return parsed
+
+
 def sha256(path: Path) -> str:
     h = hashlib.sha256()
     with path.open("rb") as fh:
