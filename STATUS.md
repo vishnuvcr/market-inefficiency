@@ -4,94 +4,68 @@ Last updated: 2026-09-18
 
 ## Overall phase
 
-**Phase 3 — Stylized facts and inefficiency discovery**
+**Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **SCAFFOLD IMPLEMENTED; REAL-DATA GATE OPEN**
+Status: **PHASE 4A DATA-ACCESS PROBE IN PROGRESS**
 
-Overall Phase 2 completion: **~55%**  
-Phase 3.1–3.6 implementation: **complete as deterministic diagnostic scaffolds; 0% real-market evidence until the validated Kaggle snapshot is acquired.**
+Phase 3 real-data discovery has been completed on the immutable Kaggle snapshot. Phase 4 is now converting those descriptive observations into preregistered, falsifiable option-market hypotheses.
 
 ## Phase tracker
 
 | Phase | Status | Completion | Current gate |
 |---|---|---:|---|
-| 0. Governance & infrastructure | 🟢 Complete | 100% | Passed CI |
+| 0. Governance & infrastructure | 🟢 Complete | 100% | Protocol and CI scaffolding |
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
-| 2. Data engineering | 🟡 In progress | 55% | Real Kaggle snapshot + derivatives source acceptance |
-| 3. Stylized facts | 🟡 Scaffold implemented | 60% | Run Phase 3.1–3.6 against validated NIFTY/VIX snapshot |
-| 4. Single-hypothesis research | ⚪ Not started | 0% | Independent Track A–D experiments |
-| 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe regime dataset |
+| 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
+| 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
+| 4. Option-market hypotheses | 🟡 In progress | 10% | Phase 4A NSE OPTIDX EOD access/data-quality gate |
+| 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe option/underlying regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
 | 8. Paper trading | ⚪ Not started | 0% | Post-validation only |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
-## Phase 3.1 implementation
+## Validated Phase 3 snapshot
 
-Added `scripts/phase3_stylized_facts.py` and its deterministic test.
+The Kaggle snapshot is immutable and hashed. The clean NIFTY baseline contains **2,799 daily bars / 2,798 return observations**, ending 2026-05-14 after excluding the incomplete 2026-05-15 session.
 
-The baseline reports:
-- observation coverage and chronology
-- simple and log return dispersion
-- skewness and excess kurtosis
-- absolute-return autocorrelation at lags 1 and 5
-- close-price maximum drawdown
+Phase 3 findings remain diagnostic only:
+- return distribution is negatively skewed and fat-tailed;
+- absolute-return dependence is persistent;
+- realized-volatility estimators differ materially;
+- jump proxies identify a small subset of unusually large moves;
+- DFA Hurst and MFDFA diagnostics require estimator/surrogate controls;
+- India VIX has a descriptive positive association with same-session absolute NIFTY returns;
+- none of these observations is treated as proof of exploitable inefficiency.
 
-The module is explicitly diagnostic-only. It does not fit a trading strategy and does not authorize execution backtesting.
+## Phase 4 preregistration
 
-## Phase 3.2 implementation
+`docs/PHASE4_PREREGISTRATION.md` freezes the initial candidate hypotheses:
+- H-A1 aggregate variance-risk premium;
+- H-A2 state dependence of VRP;
+- H-B1 jump-risk premium;
+- H-C1 surface-shape predictability;
+- H-D1 regime-conditioned efficiency.
 
-Added `scripts/phase3_realized_volatility.py` and its deterministic CI test. The diagnostic compares close-to-close, Parkinson, Garman–Klass and Yang–Zhang variance/volatility estimators, with explicit annualization-period control and OHLC consistency checks. It remains descriptive-only and does not authorize strategy or execution backtesting.
+The formal lifecycle remains:
 
-## Data evidence boundary
+**hypothesis → PIT data snapshot → feature construction → baseline → formal test → leakage audit → cost model → CPCV → DSR/PBO → stress tests → untouched holdout → decision**
 
-The selected Kaggle source is debashis74017/nifty-50-minute-data, described by its publisher as NIFTY 50 index OHLC minute/daily data with India VIX available in the dataset. Kaggle discussion material also states that F&O intraday data are not provided there and that bid/ask data require a separate data source. These observations reinforce the repository's existing boundary: Kaggle can support underlying/context diagnostics, but cannot satisfy the option quote/depth execution-data requirement.
+## Phase 4A — NSE option EOD data gate
 
-No real-market statistic is reported yet because the exact external snapshot bytes have not been acquired and hashed in the research runtime.
+Implemented:
+- `scripts/probe_nse_fno_historical.py`
+- `.github/workflows/probe-nse-option-eod.yml`
 
-## Phase 3.3 implementation
+The probe targets NSE's public historical F&O contract-wise interface for a fixed NIFTY OPTIDX contract/date and records HTTP status, response schema, row count and sample payload without interpreting an empty response as evidence of market-data absence.
 
-Added `scripts/phase3_volatility_persistence.py` and its deterministic CI test. The diagnostic reports return/absolute-return/squared-return ACFs, Durbin–Levinson PACF, rolling volatility summaries, clustering indicators, and an explicit IID reference interval. The uncertainty interval is labelled as a benchmark rather than a robust time-series confidence interval. The module remains descriptive-only.
+NSE's official reports page identifies the F&O UDiFF Common Bhavcopy Final as the current post-2024 daily F&O bhavcopy and states that the older F&O bhavcopy was discontinued from 2024-07-08. The official UDiFF documentation provides the standardized file format. The project will therefore test both the public contract-wise interface and the daily UDiFF route before selecting the acquisition layer.
 
-## Phase 3.4 implementation
+## Immediate next gates
 
-Added `scripts/phase3_jump_diagnostics.py` and its deterministic CI test. The diagnostic provides a robust standardized-return jump proxy, a bipower-variation-style excess-variation proxy, and a Parkinson range-based excess-variation proxy. A dedicated six-observation fixture now keeps the jump test independent of the five-row baseline fixture. The implementation remains descriptive-only; a jump proxy is not evidence of tradable mispricing.
-
-## Phase 3.5 implementation
-
-Added `scripts/phase3_memory_dependence.py` and its deterministic test. The scaffold computes:
-- DFA Hurst exponent on log returns
-- generalized MFDFA exponents for q = -2, -1, 0, 1, 2
-- multifractal-width diagnostic
-- deterministic shuffled-return surrogate control
-- moving-block bootstrap interval for the DFA H estimate
-
-The estimator, scale range, bootstrap seed and requested replicate count are recorded in the output. The result is explicitly diagnostic-only. Deviation from H = 0.5 or a non-zero multifractal width is not treated as evidence of exploitable inefficiency.
-
-## Phase 3.6 implementation
-
-Added `scripts/phase3_regime_segmentation.py` and its deterministic test. The scaffold creates transparent descriptive labels from rolling-return volatility terciles and contemporaneous return direction, then reports regime occupancy, transitions and run lengths. It is explicitly non-predictive and does not authorize execution backtesting.
-
-## Phase 3 roadmap
-
-1. 3.1 Stylized-fact baseline — scaffold complete.
-2. 3.2 Realized volatility — scaffold complete; real-data/session-level validation pending.
-3. 3.3 Volatility persistence — scaffold complete; robust real-data uncertainty validation pending.
-4. 3.4 Jump diagnostics — scaffold complete; real-data and frequency-sensitivity validation pending.
-5. 3.5 Memory/dependence — scaffold complete; real-data estimator/surrogate validation pending.
-6. 3.6 Regime segmentation — scaffold complete; real-data/session validation pending.
-7. 3.7 Discovery report — next; translate only robust, pre-specified findings into Phase 4 hypotheses.
-
-## Mandatory guardrail
-
-Phase 3 findings are descriptive evidence only. No apparent pattern will be labelled an exploitable inefficiency until it passes the Phase 4+ lifecycle.
-
-## Immediate next tasks
-
-1. Acquire/hash the exact Kaggle snapshot.
-2. Normalize NIFTY and India VIX with the existing adapter.
-3. Run quality/exclusion diagnostics and snapshot-manifest generation.
-4. Fix and document sessionization/sampling conventions before applying intraday OHLC estimators.
-5. Execute Phase 3.1–3.5 on the validated real snapshot.
-6. Implement Phase 3.6 descriptive regime segmentation.
-7. In parallel, continue validation of historical option EOD/quote data for Tracks A–C/G.
+1. Verify the GitHub Actions NSE probe result.
+2. Identify a reproducible daily F&O UDiFF download route and validate one trading day.
+3. Parse NIFTY OPTIDX fields and reconcile them against the contract-wise interface.
+4. Freeze the historical coverage, contract identity, price-field and missing-data rules.
+5. Add point-in-time risk-free and lot-size inputs.
+6. Only then begin Phase 4B IV/surface reconstruction.
