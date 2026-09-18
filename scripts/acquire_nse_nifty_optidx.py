@@ -91,6 +91,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
         "route": route,
         "url": url,
         "candidate_urls": [u for u, _ in candidate_urls],
+        "source_attempts": [],
     }
 
     for attempt in range(retries + 1):
@@ -100,17 +101,29 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
             r = None
             for candidate, source_tier in candidate_urls:
                 try:
-                    rr = rate_limited_get(s, candidate, timeout=60, delay_seconds=delay_seconds)
+                    request_session = s if source_tier != "secondary-mirror" else requests.Session()
+                    if source_tier == "secondary-mirror":
+                        request_session.headers.update({
+                            "User-Agent": HEADERS["User-Agent"],
+                            "Accept": "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
+                            "Accept-Language": "en-US,en;q=0.9",
+                        })
+                    rr = rate_limited_get(request_session, candidate, timeout=60, delay_seconds=delay_seconds)
+                    attempt_record = {"source_tier": source_tier, "url": candidate, "http_status": rr.status_code}
+                    rec["source_attempts"].append(attempt_record)
                     last_status = rr.status_code
                     if rr.status_code == 200:
                         r = rr
                         rec["url"] = candidate
                         rec["source_tier"] = source_tier
                         break
-                    last_error = f"HTTP {rr.status_code}"
+                    last_error = f"{source_tier}: HTTP {rr.status_code}"
                 except requests.RequestException as exc:
-                    last_error = f"{type(exc).__name__}: {exc}"
-            rec["http_status"] = last_status
+                    attempt_record = {"source_tier": source_tier, "url": candidate,
+                                       "error": f"{type(exc).__name__}: {exc}"}
+                    rec["source_attempts"].append(attempt_record)
+                    last_error = attempt_record["error"]
+            rec["last_http_status"] = last_status
             if r is None:
                 if last_status == 404:
                     rec["status"] = "NO_ARCHIVE"
@@ -122,12 +135,17 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
             rec["bytes"] = len(raw)
             rec["sha256"] = sha256_bytes(raw)
 
-            with zipfile.ZipFile(io.BytesIO(raw)) as z:
-                csvs = [n for n in z.namelist() if n.lower().endswith(".csv")]
-                if not csvs:
-                    raise ValueError("archive contains no CSV")
-                member = csvs[0]
-                csv_bytes = z.read(member)
+            try:
+                with zipfile.ZipFile(io.BytesIO(raw)) as z:
+                    if z.testzip() is not None:
+                        raise ValueError("archive ZIP integrity check failed")
+                    csvs = [n for n in z.namelist() if n.lower().endswith(".csv")]
+                    if not csvs:
+                        raise ValueError("archive contains no CSV")
+                    member = csvs[0]
+                    csv_bytes = z.read(member)
+            except zipfile.BadZipFile as exc:
+                raise ValueError(f"invalid ZIP payload from {rec.get('source_tier')}: {exc}") from exc
 
             raw_path = raw_dir / f"{d:%Y%m%d}.zip"
             raw_path.write_bytes(raw)
@@ -262,6 +280,10 @@ def main() -> None:
     }
     (root / "MANIFEST.json").write_text(json.dumps(manifest, indent=2) + "\n")
     print(json.dumps(manifest, indent=2))
+    if manifest["error_days"] > 0:
+        raise SystemExit(f"Acquisition failed: {manifest['error_days']} ERROR day(s)")
+    if manifest["validated_days"] == 0:
+        raise SystemExit("Acquisition failed: zero validated archive days")
 
 
 if __name__ == "__main__":
