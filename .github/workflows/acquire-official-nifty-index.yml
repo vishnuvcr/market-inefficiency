@@ -1,0 +1,49 @@
+name: Acquire official NIFTY 50 underlying
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [research/v1.0-protocol]
+    paths:
+      - scripts/acquire_official_nifty_index.py
+      - .github/workflows/acquire-official-nifty-index.yml
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: research/v1.0-protocol
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check requests pandas
+      - name: Acquire official NIFTY 50 historical OHLC
+        run: |
+          python scripts/acquire_official_nifty_index.py \
+            --start 2020-04-13 \
+            --end 2026-05-14
+      - name: Validate basic underlying integrity
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import pandas as pd
+          p=Path("data/phase4a/external/nifty_index/nifty50_ohlc.csv")
+          x=pd.read_csv(p)
+          assert len(x)>1000
+          assert x["date"].notna().all()
+          assert x["close"].astype(float).gt(0).all()
+          assert not x["date"].duplicated().any()
+          print("rows",len(x))
+          print("first",x["date"].iloc[-1],"last",x["date"].iloc[0])
+          PY
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-official-nifty-index-${{ github.sha }}
+          path: data/phase4a/external/nifty_index/
+          if-no-files-found: error
+          retention-days: 90
