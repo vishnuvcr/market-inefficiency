@@ -52,6 +52,62 @@ jobs:
           for p in pathlib.Path('data/kaggle_snapshot').glob('*.csv'):
               df=pd.read_csv(p); print(p.name, df.shape, list(df.columns)); print(df.head(2).to_string(index=False))
           PY
+      - name: Build sessionized daily research bars
+        run: |
+          mkdir -p data/kaggle_analysis
+          python - <<'PY'
+          import pandas as pd, pathlib, re
+          from zoneinfo import ZoneInfo
+
+          src=pathlib.Path('data/kaggle_snapshot/NIFTY 50_minute.csv')
+          df=pd.read_csv(src)
+          def pick(names):
+              m={re.sub(r'\\s+','',str(c)).lower():c for c in df.columns}
+              for n in names:
+                  k=re.sub(r'\\s+','',n).lower()
+                  if k in m: return m[k]
+              return None
+          ts=pick(['timestamp','datetime','date time','date_time','datetime_ist'])
+          date_col=pick(['date'])
+          time_col=pick(['time'])
+          if ts:
+              t=pd.to_datetime(df[ts],errors='coerce')
+          elif date_col:
+              raw=df[date_col].astype(str)
+              if time_col: raw=raw+' '+df[time_col].astype(str)
+              t=pd.to_datetime(raw,errors='coerce',dayfirst=True)
+          else: raise SystemExit('No timestamp/date column found')
+          if getattr(t.dt,'tz',None) is None: t=t.dt.tz_localize('Asia/Kolkata',ambiguous='NaT',nonexistent='NaT')
+          else: t=t.dt.tz_convert('Asia/Kolkata')
+          df['ts']=t
+          cols={x:pick([x]) for x in ['open','high','low','close','volume']}
+          if any(cols[x] is None for x in ['open','high','low','close']): raise SystemExit(f'Missing OHLC columns: {cols}')
+          for x,c in cols.items():
+              if c: df[x]=pd.to_numeric(df[c],errors='coerce')
+          df=df.dropna(subset=['ts','open','high','low','close']).sort_values('ts')
+          tm=df['ts'].dt.time
+          from datetime import time
+          df=df[(tm>=time(9,15)) & (tm<=time(15,30))].copy()
+          df['session_date']=df['ts'].dt.date
+          agg={'open':'first','high':'max','low':'min','close':'last'}
+          if 'volume' in df: agg['volume']='sum'
+          daily=df.groupby('session_date',sort=True).agg(agg).reset_index()
+          daily['timestamp']=pd.to_datetime(daily['session_date']).dt.tz_localize('Asia/Kolkata').dt.tz_convert('UTC')
+          out=daily[['timestamp','open','high','low','close'] + (['volume'] if 'volume' in daily else [])]
+          out.to_csv('data/kaggle_analysis/NIFTY50_daily.csv',index=False)
+          print('Sessionized rows:',len(out),'range:',out.timestamp.min(),out.timestamp.max())
+          print(out.head(2).to_string(index=False))
+          PY
+      - name: Run Phase 3 descriptive diagnostics
+        run: |
+          python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=2,<3"
+          python scripts/phase3_stylized_facts.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_1_stylized_facts.json
+          python scripts/phase3_realized_volatility.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_2_realized_volatility.json
+          python scripts/phase3_volatility_persistence.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_3_volatility_persistence.json
+          python scripts/phase3_jump_diagnostics.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_4_jump_diagnostics.json
+          python scripts/phase3_memory_dependence.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_5_memory_dependence.json --bootstrap 100 --seed 20260918
+          python scripts/phase3_regime_segmentation.py --input data/kaggle_analysis/NIFTY50_daily.csv --output data/kaggle_analysis/phase3_6_regime_segmentation.json --window 20
+          cp data/kaggle_snapshot/MANIFEST.json data/kaggle_analysis/
       - name: Publish acquired snapshot artifact
         uses: actions/upload-artifact@v4
         with:
