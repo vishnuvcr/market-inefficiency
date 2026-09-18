@@ -8,6 +8,8 @@ on:
       - .github/workflows/reconcile-nifty-optidx.yml
       - scripts/reconcile_nifty_optidx_historical.py
       - scripts/audit_phase4a_calendar_gaps.py
+      - scripts/build_nifty_contract_master.py
+      - scripts/test_nifty_contract_master.py
       - data/phase4a/nse_fno_gap_audit.csv
   workflow_run:
     workflows: ["Acquire historical NIFTY OPTIDX EOD partitions"]
@@ -93,6 +95,14 @@ jobs:
         with:
           name: phase4a-reconciliation-${{ steps.run.outputs.run_id }}
           path: PHASE4A_RECONCILIATION.json
+          if-no-files-found: error
+          retention-days: 90
+
+      - name: Upload NIFTY contract master
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-nifty-contract-master-${{ steps.run.outputs.run_id }}
+          path: data/phase4a/NIFTY_CONTRACT_MASTER.csv
           if-no-files-found: error
           retention-days: 90
 
