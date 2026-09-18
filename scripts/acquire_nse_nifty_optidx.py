@@ -24,6 +24,7 @@ import requests
 
 BASE = "https://archives.nseindia.com"
 FALLBACK_BASE = "https://nsearchives.nseindia.com"
+MIRROR_BASE = "https://raw.githubusercontent.com/SantoshSrinivas79/NSE-FNO-Data-bank/main/data"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128 Safari/537.36",
     "Accept": "application/zip,application/octet-stream;q=0.9,*/*;q=0.8",
@@ -78,23 +79,33 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
     route, url = url_for(d)
     s = requests.Session()
     s.headers.update(HEADERS)
-    candidate_urls = [url]
+    candidate_urls = [(url, "nse-primary")]
     if route == "legacy":
-        candidate_urls.append(url.replace(BASE, FALLBACK_BASE, 1))
-    rec = {"date": d.isoformat(), "route": route, "url": url, "candidate_urls": candidate_urls}
+        candidate_urls.append((url.replace(BASE, FALLBACK_BASE, 1), "nse-fallback"))
+        month_num = d.strftime("%m")
+        filename = f"fo{d:%d}{d:%b}".upper() + f"{d:%Y}bhav.csv.zip"
+        mirror_url = f"{MIRROR_BASE}/{d:%Y}/{month_num}/{filename}"
+        candidate_urls.append((mirror_url, "secondary-mirror"))
+    rec = {
+        "date": d.isoformat(),
+        "route": route,
+        "url": url,
+        "candidate_urls": [u for u, _ in candidate_urls],
+    }
 
     for attempt in range(retries + 1):
         try:
             last_status = None
             last_error = None
             r = None
-            for candidate in candidate_urls:
+            for candidate, source_tier in candidate_urls:
                 try:
                     rr = rate_limited_get(s, candidate, timeout=60, delay_seconds=delay_seconds)
                     last_status = rr.status_code
                     if rr.status_code == 200:
                         r = rr
                         rec["url"] = candidate
+                        rec["source_tier"] = source_tier
                         break
                     last_error = f"HTTP {rr.status_code}"
                 except requests.RequestException as exc:
@@ -103,6 +114,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
             if r is None:
                 if last_status == 404:
                     rec["status"] = "NO_ARCHIVE"
+                    rec["source_tier"] = "none"
                     return rec
                 raise requests.HTTPError(last_error or "all archive hosts failed")
             r.raise_for_status()
@@ -184,6 +196,7 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int, delay_second
             rec.update({
                 "status": "VALIDATED",
                 "csv_member": member,
+                "source_tier": rec.get("source_tier", "unknown"),
                 "nifty_option_rows": int(len(out)),
                 "raw_path": str(raw_path),
                 "normalized_path": str(norm_path),
@@ -236,7 +249,7 @@ def main() -> None:
         "snapshot_created_at": datetime.now(timezone.utc).isoformat(),
         "source": "NSE F&O daily bhavcopy archives",
         "source_version": "legacy+UDiFF route by official format boundary",
-        "preprocessing_version": "phase4a-nifty-optidx-v2-rate-limited",
+        "preprocessing_version": "phase4a-nifty-optidx-v3-secondary-mirror-fallback",
         "start": args.start,
         "end": args.end,
         "records": records,
