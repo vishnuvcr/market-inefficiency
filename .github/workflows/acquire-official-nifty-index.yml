@@ -22,7 +22,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          ref: ${{ github.event.pull_request.base.ref || 'research/v1.0-protocol' }}
+          ref: ${{ github.event.pull_request.head.ref || 'research/v1.0-protocol' }}
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
