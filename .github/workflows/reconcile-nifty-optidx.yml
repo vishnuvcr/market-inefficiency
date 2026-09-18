@@ -1,0 +1,72 @@
+name: Reconcile NIFTY OPTIDX historical snapshot
+
+on:
+  workflow_run:
+    workflows: ["Acquire historical NIFTY OPTIDX EOD partitions"]
+    types: [completed]
+    branches:
+      - research/v1.0-protocol
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "Successful acquisition workflow run ID to reconcile"
+        required: true
+        type: string
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  reconcile:
+    if: >-
+      ${{ github.event_name == 'workflow_dispatch' ||
+          github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout research branch
+        uses: actions/checkout@v6
+        with:
+          ref: research/v1.0-protocol
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install --disable-pip-version-check pandas
+
+      - name: Resolve acquisition run ID
+        id: run
+        env:
+          EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
+          INPUT_RUN_ID: ${{ inputs.run_id }}
+        run: |
+          if [ -n "$INPUT_RUN_ID" ]; then
+            echo "run_id=$INPUT_RUN_ID" >> "$GITHUB_OUTPUT"
+          else
+            echo "run_id=$EVENT_RUN_ID" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download immutable yearly artifacts
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.run.outputs.run_id }}
+          pattern: nse-nifty-optidx-*
+          path: data/phase4a_artifacts
+          merge-multiple: false
+
+      - name: Reconcile all yearly partitions
+        run: |
+          python scripts/reconcile_nifty_optidx_historical.py             --root data/phase4a_artifacts             --output PHASE4A_RECONCILIATION.json
+
+      - name: Upload reconciliation report
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase4a-reconciliation-${{ steps.run.outputs.run_id }}
+          path: PHASE4A_RECONCILIATION.json
+          if-no-files-found: error
+          retention-days: 90
