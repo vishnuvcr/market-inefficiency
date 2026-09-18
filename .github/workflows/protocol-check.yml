@@ -164,7 +164,8 @@ jobs:
           python - <<'PY'
           import json
           from pathlib import Path
-          import os\n          r=json.loads((Path(os.environ["RUNNER_TEMP"]) / "phase5" / "PHASE5_PREDICTION_REPORT.json").read_text())
+          import os
+          r=json.loads((Path(os.environ["RUNNER_TEMP"]) / "phase5" / "PHASE5_PREDICTION_REPORT.json").read_text())
           assert r["status"]=="PASS", r
           assert r["sample"]["holdout_rows"] >= 100, r
           assert r["models"]["multimodal"]["direction_holdout"]["auc"] == r["models"]["multimodal"]["direction_holdout"]["auc"], r
