@@ -74,7 +74,16 @@ def main() -> None:
     m["vix_change"] = m["vix_close"].pct_change()
     m["next_return"] = m["return"].shift(-1)
     m["next_abs_return"] = m["return"].abs().shift(-1)
-    m["vix_tercile"] = pd.qcut(m["vix_close"].rank(method="first"), 3, labels=["LOW", "MID", "HIGH"])
+
+    # Build terciles only from non-missing VIX observations, then restore the
+    # original index. This avoids qcut failures caused by NaN ranks in small
+    # or synthetic fixtures while leaving missing VIX rows unclassified.
+    valid_vix = m["vix_close"].notna()
+    if int(valid_vix.sum()) < 3:
+        raise SystemExit("Insufficient non-missing VIX observations for terciles")
+    ranks = m.loc[valid_vix, "vix_close"].rank(method="first")
+    labels = pd.qcut(ranks, 3, labels=["LOW", "MID", "HIGH"])
+    m["vix_tercile"] = pd.Series(labels.astype("object").to_numpy(), index=m.index[valid_vix])
 
     conditional = {}
     for label, g in m.groupby("vix_tercile", observed=True):
