@@ -80,8 +80,8 @@ Subphases:
 - 3.1 **Stylized-fact baseline — scaffold complete.** Coverage, returns, tails, absolute-return autocorrelation and drawdown diagnostics.
 - 3.2 **Realized volatility — scaffold complete.** Close-to-close, Parkinson, Garman–Klass and Yang–Zhang estimators with explicit sampling/annualization controls.
 - 3.3 **Volatility persistence — scaffold complete.** ACF/PACF, rolling volatility, clustering diagnostics and an explicit IID reference-interval uncertainty diagnostic.
-- 3.4 **Jump diagnostics — next.** Multiple jump estimators and sensitivity to sampling frequency.
-- 3.5 **Memory/dependence — planned.** Hurst/MFDFA with estimator uncertainty and surrogate controls.
+- 3.4 **Jump diagnostics — scaffold complete.** Robust standardized-return flags, bipower-variation-style excess-variation proxy and Parkinson range extension; sensitivity analysis remains required.
+- 3.5 **Memory/dependence — next.** Hurst/MFDFA with estimator uncertainty and surrogate controls.
 - 3.6 **Descriptive regime segmentation — planned.**
 - 3.7 **Discovery report — planned.** Only pre-specified, robust findings may become Phase 4 hypotheses.
 
