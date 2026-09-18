@@ -1,7 +1,8 @@
-effective_from,rule,lot_size,source
-2020-04-13,through June 2021 expiry regime,75,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
-2021-07-01,July 2021 expiry and subsequent monthly/weekly contracts,50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
-2023-07-01,NIFTY unchanged after 2023 review,50,https://archives.nseindia.com/content/circulars/FAOP56233.pdf
-2024-04-26,new NIFTY contracts available from trade date Apr 26 2024,25,https://nsearchives.nseindia.com/content/circulars/FAOP61415.pdf
-2024-11-20,new NIFTY index derivatives introduced from Nov 20 2024,75,https://nsearchives.nseindia.com/content/circulars/FAOP64625.pdf
-2025-12-30,weekly/monthly existing contracts retain 75 through Dec 30 2025 expiry; revised 65 applies to first weekly Jan 6 2026 and first monthly Jan 27 2026; quarterly/half-yearly existing contracts revise EOD Dec 30 2025,65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
+rule_id,scope,effective_rule,lot_size,source
+LOT_2021,NIFTY expiries,"Through June 2021 expiries",75,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2021,NIFTY expiries,"July 2021 onward",50,https://archives.nseindia.com/content/circulars/FAOP47854.pdf
+LOT_2023,NIFTY expiries,"2023 review retained 50",50,https://archives.nseindia.com/content/circulars/FAOP56233.pdf
+LOT_2024A,NIFTY all new/available contracts,"Trade date Apr 26 2024 onward; April 25 expiry remains 50",25,https://nsearchives.nseindia.com/content/circulars/FAOP61415.pdf
+LOT_2024B,NIFTY new contracts,"New weekly/monthly/quarterly/half-yearly contracts introduced from Nov 20 2024 onward",75,https://nsearchives.nseindia.com/content/circulars/FAOP64625.pdf
+LOT_2025,NIFTY weekly/monthly,"Existing 75 lot applies through Dec 30 2025 expiry; first revised weekly Jan 6 2026 and monthly Jan 27 2026",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
+LOT_2025,NIFTY quarterly/half-yearly,"Existing quarterly/half-yearly contracts revised EOD Dec 30 2025",65,https://nsearchives.nseindia.com/content/circulars/FAOP70616.pdf
