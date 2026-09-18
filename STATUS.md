@@ -6,9 +6,9 @@ Last updated: 2026-09-18
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A DATA-ACCESS PROBE IN PROGRESS**
+Status: **PHASE 4A — NIFTY OPTIDX DATA ACQUISITION / VALIDATION IN PROGRESS**
 
-Phase 3 real-data discovery has been completed on the immutable Kaggle snapshot. Phase 4 is now converting those descriptive observations into preregistered, falsifiable option-market hypotheses.
+Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
 ## Phase tracker
 
@@ -18,7 +18,7 @@ Phase 3 real-data discovery has been completed on the immutable Kaggle snapshot.
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
-| 4. Option-market hypotheses | 🟡 In progress | 10% | Phase 4A NSE OPTIDX EOD access/data-quality gate |
+| 4. Option-market hypotheses | 🟡 In progress | 15% | NIFTY OPTIDX EOD snapshot |
 | 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe option/underlying regime dataset |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
@@ -29,14 +29,7 @@ Phase 3 real-data discovery has been completed on the immutable Kaggle snapshot.
 
 The Kaggle snapshot is immutable and hashed. The clean NIFTY baseline contains **2,799 daily bars / 2,798 return observations**, ending 2026-05-14 after excluding the incomplete 2026-05-15 session.
 
-Phase 3 findings remain diagnostic only:
-- return distribution is negatively skewed and fat-tailed;
-- absolute-return dependence is persistent;
-- realized-volatility estimators differ materially;
-- jump proxies identify a small subset of unusually large moves;
-- DFA Hurst and MFDFA diagnostics require estimator/surrogate controls;
-- India VIX has a descriptive positive association with same-session absolute NIFTY returns;
-- none of these observations is treated as proof of exploitable inefficiency.
+Phase 3 findings remain diagnostic only. None is treated as proof of exploitable inefficiency.
 
 ## Phase 4 preregistration
 
@@ -53,19 +46,27 @@ The formal lifecycle remains:
 
 ## Phase 4A — NSE option EOD data gate
 
+The NSE runner has validated access to both the public historical contract-wise interface and the daily UDiFF archive route. A 2026-05-14 UDiFF archive returned HTTP 200 and contained 1,950 NIFTY option rows in the probe.
+
+The fixed-contract probe returned zero rows for its particular test parameters. This is treated only as a contract-query result, not as evidence that NIFTY option data is unavailable. The daily archive is therefore the primary acquisition route.
+
 Implemented:
 - `scripts/probe_nse_fno_historical.py`
-- `.github/workflows/probe-nse-option-eod.yml`
+- `scripts/probe_nse_option_surface.py`
+- `scripts/probe_nse_udiff_bhavcopy.py`
+- `scripts/probe_nse_archive_boundary.py`
+- `scripts/acquire_nse_nifty_optidx.py`
+- `.github/workflows/acquire-nifty-optidx.yml`
 
-The probe targets NSE's public historical F&O contract-wise interface for a fixed NIFTY OPTIDX contract/date and records HTTP status, response schema, row count and sample payload without interpreting an empty response as evidence of market-data absence.
+The acquisition layer preserves original ZIP files, validates schemas, extracts NIFTY CE/PE rows, normalizes common fields, records SHA-256 hashes and creates an immutable snapshot manifest. Legacy and UDiFF formats are explicitly handled separately rather than silently assumed identical.
 
-NSE's official reports page identifies the F&O UDiFF Common Bhavcopy Final as the current post-2024 daily F&O bhavcopy and states that the older F&O bhavcopy was discontinued from 2024-07-08. The official UDiFF documentation provides the standardized file format. The project will therefore test both the public contract-wise interface and the daily UDiFF route before selecting the acquisition layer.
+The first bounded pilot is **2026-05-01 through 2026-05-14** and is currently running in GitHub Actions.
 
 ## Immediate next gates
 
-1. Verify the GitHub Actions NSE probe result.
-2. Identify a reproducible daily F&O UDiFF download route and validate one trading day.
-3. Parse NIFTY OPTIDX fields and reconcile them against the contract-wise interface.
-4. Freeze the historical coverage, contract identity, price-field and missing-data rules.
-5. Add point-in-time risk-free and lot-size inputs.
-6. Only then begin Phase 4B IV/surface reconstruction.
+1. Complete the NIFTY OPTIDX pilot.
+2. Validate the legacy/UDiFF historical boundary.
+3. Measure daily coverage and NIFTY option-contract counts.
+4. Freeze the normalized option-EOD schema and snapshot.
+5. Add point-in-time lot-size and risk-free inputs.
+6. Begin Phase 4B implied-volatility/surface reconstruction.
