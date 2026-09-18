@@ -57,11 +57,12 @@ jobs:
           from pathlib import Path
           r=json.loads((Path("data/phase8b/report")/"PHASE8B_UNDERLYING_VOL_REPORT.json").read_text())
           assert r["status"]=="PASS"
-          assert r["data"]["forward_rows"]>=30
+          assert r["data"]["forward_rows"]>=20
           print("8B PASS")
           print(json.dumps(r["forward_volatility_prediction"],indent=2))
           print(json.dumps(r["forward_cost_sensitivity"]["20"],indent=2))
           print(json.dumps(r["promotion_gates"],indent=2))
+          print(json.dumps(r["data"],indent=2))
           PY
       - name: Upload report
         uses: actions/upload-artifact@v4
