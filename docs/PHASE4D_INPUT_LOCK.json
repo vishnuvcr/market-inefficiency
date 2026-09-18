@@ -1,0 +1,24 @@
+{
+  "phase": "4D",
+  "inputs": {
+    "phase4b_workflow_run_id": 35393747845,
+    "phase4b_artifact_id": 10567387234,
+    "phase4b_artifact_digest": "sha256:fb7a9a0dfb4917fe24188656eb5e1c1bc0ed02a68f22a2e95f1704cabeac9ff5",
+    "phase4b_head_branch": "ci/phase4b-validation",
+    "phase4b_head_sha": "7e7608081ca94766c1a80899668f0a0e61f1d84f",
+    "underlying_workflow_run_id": 35386941363,
+    "underlying_artifact_id": 10564212363,
+    "underlying_artifact_digest": "sha256:3d1d07b9c6a295b33f110ed1b3c5ef3fb162e44b888f6eb0923fd8dbe47f45ee"
+  },
+  "coverage": {
+    "underlying_start": "2020-04-13",
+    "underlying_end": "2026-05-14"
+  },
+  "method": {
+    "holdout": "chronological 80/20",
+    "state": "20-session trailing realized volatility; tercile cutpoints from training only",
+    "H-A2": "30D and 60D constant-maturity ATM variance spread by frozen volatility regime",
+    "H-B1": "30D downside-wing variance above ATM as ex-ante tail proxy versus subsequent jump variance",
+    "H-C1": "30D downside skew, upside skew and 30-to-60D ATM term slope predicting subsequent 30D downside-skew change"
+  }
+}
