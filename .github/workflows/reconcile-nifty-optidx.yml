@@ -1,6 +1,12 @@
 name: Reconcile NIFTY OPTIDX historical snapshot
 
 on:
+  push:
+    branches:
+      - research/v1.0-protocol
+    paths:
+      - .github/workflows/reconcile-nifty-optidx.yml
+      - scripts/reconcile_nifty_optidx_historical.py
   workflow_run:
     workflows: ["Acquire historical NIFTY OPTIDX EOD partitions"]
     types: [completed]
@@ -20,7 +26,8 @@ permissions:
 jobs:
   reconcile:
     if: >-
-      ${{ github.event_name == 'workflow_dispatch' ||
+      ${{ github.event_name == 'push' ||
+          github.event_name == 'workflow_dispatch' ||
           github.event.workflow_run.conclusion == 'success' }}
     runs-on: ubuntu-latest
     steps:
@@ -40,14 +47,21 @@ jobs:
       - name: Resolve acquisition run ID
         id: run
         env:
+          EVENT_NAME: ${{ github.event_name }}
           EVENT_RUN_ID: ${{ github.event.workflow_run.id }}
           INPUT_RUN_ID: ${{ inputs.run_id }}
+          GH_TOKEN: ${{ github.token }}
         run: |
-          if [ -n "$INPUT_RUN_ID" ]; then
-            echo "run_id=$INPUT_RUN_ID" >> "$GITHUB_OUTPUT"
+          if [ "$EVENT_NAME" = "workflow_dispatch" ] && [ -n "$INPUT_RUN_ID" ]; then
+            run_id="$INPUT_RUN_ID"
+          elif [ "$EVENT_NAME" = "workflow_run" ]; then
+            run_id="$EVENT_RUN_ID"
           else
-            echo "run_id=$EVENT_RUN_ID" >> "$GITHUB_OUTPUT"
+            run_id="$(gh run list               --repo "$GITHUB_REPOSITORY"               --workflow "Acquire historical NIFTY OPTIDX EOD partitions"               --branch research/v1.0-protocol               --status success               --limit 1               --json databaseId               --jq '.[0].databaseId')"
           fi
+          test -n "$run_id"
+          echo "run_id=$run_id" >> "$GITHUB_OUTPUT"
+          echo "Using acquisition run: $run_id"
 
       - name: Download immutable yearly artifacts
         uses: actions/download-artifact@v5
@@ -61,7 +75,9 @@ jobs:
 
       - name: Reconcile all yearly partitions
         run: |
-          python scripts/reconcile_nifty_optidx_historical.py             --root data/phase4a_artifacts             --output PHASE4A_RECONCILIATION.json
+          python scripts/reconcile_nifty_optidx_historical.py \
+            --root data/phase4a_artifacts \
+            --output PHASE4A_RECONCILIATION.json
 
       - name: Upload reconciliation report
         uses: actions/upload-artifact@v4
