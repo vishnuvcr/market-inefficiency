@@ -91,3 +91,17 @@ Those require option data, point-in-time availability controls, realistic transa
 **Phase 3.7 = DISCOVERY / BASELINE only.**
 
 Next research gate: formalize preregistered candidate hypotheses from the descriptive evidence, then move to option EOD/quote acquisition and point-in-time validation.
+
+
+## Additional verified diagnostics
+
+The downloaded Phase 3 artifact was independently inspected after acquisition:
+
+- DFA Hurst estimate: **0.5523**
+- Moving-block bootstrap 95% CI: **0.4698–0.6185**
+- Shuffled-return surrogate Hurst: **0.5311**
+- MFDFA width H(-2)−H(+2): **0.04895**
+- Robust jump proxy flagged **81 / 2,798 = 2.895%** of return observations at the fixed z=3 threshold.
+- Bipower-variation excess-variation proxy: **0.01072**.
+
+These values remain descriptive. In particular, the Hurst interval overlaps 0.5 and the surrogate is also above 0.5, so no standalone efficiency conclusion is warranted.
