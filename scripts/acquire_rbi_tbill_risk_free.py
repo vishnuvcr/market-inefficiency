@@ -204,9 +204,9 @@ def main() -> int:
     coverage_start = curve["date"].min() if not curve.empty else None
     coverage_end = curve["date"].max() if not curve.empty else None
 
-    if coverage_start is None or pd.Timestamp(coverage_start) > start.strftime("%Y-%m-%d"):
+    if coverage_start is None or pd.Timestamp(coverage_start) > start:
         raise SystemExit(f"risk-free curve starts too late: {coverage_start}")
-    if coverage_end is None or pd.Timestamp(coverage_end) < end.strftime("%Y-%m-%d"):
+    if coverage_end is None or pd.Timestamp(coverage_end) < end:
         raise SystemExit(f"risk-free curve ends too early: {coverage_end}")
     if len(obs_valid) < 300:
         raise SystemExit(f"too few valid RBI T-bill observations: {len(obs_valid)}")
