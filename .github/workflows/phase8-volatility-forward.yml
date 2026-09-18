@@ -8,6 +8,7 @@ on:
       - scripts/phase8_volatility_conditional.py
       - scripts/acquire_nse_nifty_optidx.py
       - scripts/acquire_official_nifty_index.py
+      - scripts/acquire_niftyindices_nifty50.py
       - scripts/acquire_rbi_tbill_risk_free.py
       - scripts/build_nifty_contract_master.py
       - scripts/reconstruct_phase4b_iv.py
@@ -37,9 +38,9 @@ jobs:
             "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" \
             "scikit-learn>=1.5,<2" requests openpyxl
 
-      - name: Acquire fresh official NIFTY 50 underlying
+      - name: Acquire fresh official NIFTY 50 underlying via NSE Indices public history
         run: |
-          python scripts/acquire_official_nifty_index.py \
+          python scripts/acquire_niftyindices_nifty50.py \
             --start 2026-05-15 \
             --end 2026-09-18
 
@@ -47,8 +48,12 @@ jobs:
         run: |
           python - <<'PY'
           from pathlib import Path
+          import json
           import pandas as pd
-          p=Path("data/phase4a/external/nifty_index/nifty50_ohlc.csv")
+          root=Path("data/phase4a/external/nifty_index")
+          m=json.loads((root/"MANIFEST.json").read_text())
+          assert m["status"]=="PASS", m
+          p=root/"nifty50_ohlc.csv"
           x=pd.read_csv(p)
           assert len(x) >= 60, len(x)
           assert not x["date"].duplicated().any()
@@ -56,6 +61,7 @@ jobs:
           assert pd.Timestamp(x["date"].max()) >= pd.Timestamp("2026-09-11")
           assert x["close"].astype(float).gt(0).all()
           print("Fresh underlying PASS:", len(x), x["date"].min(), x["date"].max())
+          print("Source:", m["source"], "| operator:", m["operator"])
           PY
 
       - name: Acquire fresh NIFTY OPTIDX EOD
@@ -151,7 +157,7 @@ jobs:
           assert r["status"]=="PASS", r
           assert r["data"]["fresh_forward_holdout"] is True
           assert r["data"]["forward_eval_rows"] >= 30
-          assert r["decision"]["promotable_candidates"] == [] or len(r["decision"]["promotable_candidates"]) >= 1
+          assert "promotable_candidates" in r["decision"]
           print("PHASE8_VOLATILITY_CONDITIONAL: PASS")
           print("Forward volatility AUC:", r["forward_volatility_prediction"]["auc"])
           print("Promotable candidates:", r["decision"]["promotable_candidates"])
