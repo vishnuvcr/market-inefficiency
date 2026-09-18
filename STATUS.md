@@ -6,7 +6,7 @@ Last updated: 2026-09-18
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A — NIFTY OPTIDX ACQUISITION + RECONCILIATION PASSED; PIT INPUT AUDIT BLOCKED PENDING EXTERNAL INPUTS**
+Status: **PHASE 4A — OPTION SNAPSHOT + OFFICIAL NIFTY UNDERLYING + LOT MASTER PASSED; PIT INPUT AUDIT BLOCKED ON RISK-FREE / GAP EXCLUSION / FINAL JOIN**
 
 Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
@@ -62,13 +62,17 @@ The acquisition layer preserves original ZIP files, validates schemas, extracts 
 
 The bounded pilot for **2026-05-01 through 2026-05-14 has passed**. It produced 17,482 normalized NIFTY CE/PE rows across 9 trading days with no duplicate contract keys or hard schema-quality failures. Run #17 completed successfully for all seven yearly partitions (2020–2026). It produced 1,511 validated archive days and 2,859,228 normalized NIFTY CE/PE rows across the immutable yearly artifacts. The historical build is partitioned by calendar year to keep artifacts reproducible and bounded. The first historical runs exposed a legacy-source acquisition problem after the URL casing correction: acquisition could complete without producing normalized files because source-level outcomes were not sufficiently visible. The downloader now records per-source HTTP/error diagnostics, performs ZIP integrity checks, uses clean headers for the secondary mirror, and fails explicitly on ERROR days or zero validated days. The workflow now runs a real one-session legacy smoke test (2020-04-13) before allowing 2020–2024 partitions to start; 2025–2026 remain independently eligible. The 2020 partition is scoped from 2020-04-13, matching the currently validated public archive coverage boundary used for this acquisition build. The legacy CSV does not contain the `LTP` column. This is treated as a schema limitation: `last_price` remains NA rather than substituting `CLOSE`. The raw ZIP is still preserved and the normalized record exposes provenance.
 
+## Phase 4A — official NIFTY 50 underlying gate
+
+The official NSE NIFTY 50 underlying acquisition is now passed. Acquisition Run #22 produced the immutable artifact for **2020-04-13 through 2026-05-14** with **1,511 daily rows**, exact requested date bounds, no duplicate dates, positive closes, preserved raw JSON chunks, and a manifest hash. The implementation uses the official NSE historical-index endpoint with 60-calendar-day chunks to avoid silent response-size truncation.
+
 ## Phase 4A — cross-year reconciliation / PIT audit
 
 The acquisition workflow now has a dedicated reconciliation script and workflow. The reconciler checks year coverage, manifest/file agreement, cross-year duplicate contract keys, route/date-boundary consistency, normalized schema errors, expiry/strike integrity, source-tier provenance, legacy-vs-UDiFF missingness, calendar-gap diagnostics, and the required `available_at` PIT field.
 
-The reconciliation workflow was added to the research branch and the protocol PR was merged into `main` so the workflow is eligible for GitHub's `workflow_run` event. It also now runs on research-branch updates and automatically selects the latest successful acquisition run when no explicit run ID is supplied, avoiding another market-data download.
+The reconciliation workflow is now on `research/v1.0-protocol` and is triggered both by research-branch updates and successful acquisition runs. It also now runs on research-branch updates and automatically selects the latest successful acquisition run when no explicit run ID is supplied, avoiding another market-data download.
 
-Full reconciliation Run #3 (GitHub Actions run `35374383806`, commit `2d2a684f2d7498cbbfefbe406a6fb06e00dc6e6f`) completed successfully against immutable Acquisition Run #17 (`35355477098`). The reconciliation report passed all hard gates: 7/7 year manifests present, 1,511 validated archive days, 1,511 normalized files/dates, 2,859,228 normalized rows, zero duplicate contract keys, zero file errors, zero route errors, zero missing/unexpected normalized dates, zero negative prices, zero expiry-before-trade rows, zero non-positive strikes, zero missing `available_at` rows, and zero `available_at)-before-trade rows. The report also records 85 weekday no-archive dates. Calendar audit work now classifies these explicitly; 2021-03-30 is a documented trading-day archive gap rather than a holiday and remains a coverage gap requiring exclusion or separate sourcing.
+Full reconciliation Run #12 (GitHub Actions run `35388053480`, commit `a9b29862105d6c9d61e7459226728d7364bc268b`) completed successfully against immutable Acquisition Run #17 (`35355477098`). The reconciliation report passed all hard gates: 7/7 year manifests present, 1,511 validated archive days, 1,511 normalized files/dates, 2,859,228 normalized rows, zero duplicate contract keys, zero file errors, zero route errors, zero missing/unexpected normalized dates, zero negative prices, zero expiry-before-trade rows, zero non-positive strikes, zero missing `available_at` rows, and zero `available_at)-before-trade rows. The report also records 85 weekday no-archive dates. Calendar audit work now classifies these explicitly; 2021-03-30 is a documented trading-day archive gap rather than a holiday and remains a coverage gap requiring exclusion or separate sourcing.
 
 The previous Run #2 failure was a timezone-comparison implementation error rather than a data-quality failure: `available_at` was timezone-aware while `trade_date` was timezone-naive. The reconciler now compares their calendar dates for the current PIT gate.
 
@@ -89,9 +93,9 @@ Weekday no-archive dates are reported rather than automatically failed because a
 
 `docs/PHASE4A_PIT_AUDIT.md` and `data/phase4a/pit_input_registry.csv` now freeze the remaining PIT requirements. The structural EOD reconciliation is passed, but the formal IV/VRP dataset is not yet frozen because legacy underlying values and historical contract-level lot sizes require independent PIT sources, and the risk-free interpolation/availability rule is not yet frozen. NSE documents EOD generation once per trading day, which supports an EOD convention but does not establish an exact publication timestamp. UDiFF contains `UndrlygPric` and `NewBrdLotQty`; legacy rows preserve these fields as NA rather than inferred substitutions. citeturn0search0turn0search2
 
-Official NSE lot-size provenance now covers the main NIFTY transitions: 75 to 50 for July 2021 contracts, 50 retained in 2023, 50 to 25 from April 26, 2024 contracts, 25 to 75 for new contracts introduced from November 20, 2024, and the subsequent 75 to 65 transition beginning with revised 2026 expiries under the October 2025 circular. The 2025 rule is explicitly contract-cycle dependent: weekly/monthly existing contracts retain 75 through the December 30, 2025 expiry, while the first revised weekly/monthly expiries are January 6/27, 2026; existing quarterly/half-yearly contracts revise EOD December 30, 2025. Contract-level transition rules mean lot size must be joined by contract/expiry, not merely by trade date. citeturn5search4turn6search15turn4view0 citeturn3search43turn3search42turn4search0turn3search45
+Official NSE lot-size provenance now covers the main NIFTY transitions: 75 to 50 for the 2021 contract cycles, 50 retained in 2023, 50 to 25 from April 26, 2024 contracts, 25 to 75 for new contracts introduced from November 20, 2024, and the subsequent 75 to 65 transition under the October 2025 circular. The 2025 rule is explicitly contract-cycle dependent: the last existing-lot weekly expiry is December 23, 2025; the last existing-lot monthly expiry is December 30, 2025; first revised weekly/monthly expiries are January 6/27, 2026; existing quarterly/half-yearly contracts revise EOD December 30, 2025. The reconciliation workflow now materializes **73,611 contract-lot intervals from 2,859,228 observations across 1,511 normalized files**, with zero duplicate contract/effective-from keys and PIT source availability before the mapped observation dates. Contract-level transition rules mean lot size must be joined by contract/expiry, not merely by trade date. citeturn5search4turn6search15turn4view0 citeturn3search43turn3search42turn4search0turn3search45
 
-RBI documents 91-day Treasury Bills as short-term Government instruments and publishes auction cut-off yields. These are a candidate risk-free source, but publication timing and the interpolation/carry-forward rule must be frozen before use in a PIT feature. citeturn5search3turn5search0
+RBI WSS/DBIE provides 91-day, 182-day and 364-day Treasury-bill primary auction yields. The source remains a candidate until the acquisition preserves publication/availability evidence and the interpolation/carry-forward rule is frozen for PIT use. citeturn5search3turn5search0
 
 
 ## Phase 4A — external PIT input layer implemented
@@ -107,9 +111,8 @@ This advances the engineering gate but does **not** pass the PIT audit. Phase 4B
 
 ## Immediate next gates
 
-1. Acquire/validate a contract-level historical NIFTY lot-size master covering all included expiries.
-2. Acquire/validate a PIT underlying/index close series for legacy option rows before 2024-07-08.
-3. Freeze a PIT risk-free curve source and availability/interpolation rule.
-4. Convert the 2021-03-30 trading-day archive gap into an explicit exclusion mask unless independently sourced.
-5. Freeze the normalized option-EOD research snapshot and included-contract/date manifest.
-6. Begin Phase 4B implied-volatility/surface reconstruction only after the PIT input gate passes.
+1. Acquire and validate the RBI risk-free term structure with explicit PIT publication/availability evidence.
+2. Freeze the 2021-03-30 trading-day archive gap as an exclusion mask unless an independent pre-decision source is found.
+3. Perform the final PIT join of option EOD + official NIFTY underlying + contract-lot master + risk-free curve.
+4. Run the final PIT/leakage/coverage audit and freeze the immutable Phase 4A snapshot.
+5. Begin Phase 4B implied-volatility/surface reconstruction only after the PIT input gate passes.
