@@ -24,6 +24,9 @@ UA = (
     "(KHTML, like Gecko) Chrome/149.0.0.0 Safari/537.36"
 )
 CHUNK_DAYS = 60
+REQUEST_RETRIES = 4
+BOOTSTRAP_TIMEOUT = 60
+REQUEST_TIMEOUT = 90
 
 
 def sha256(path: Path) -> str:
@@ -60,8 +63,17 @@ def main() -> None:
         "X-Requested-With": "XMLHttpRequest",
     })
 
-    bootstrap = session.get(BOOTSTRAP_URL, timeout=20)
-    bootstrap.raise_for_status()
+    # NSE occasionally stalls on the bootstrap page. Retry transient
+    # network/server failures without bypassing the public endpoint.
+    for attempt in range(REQUEST_RETRIES):
+        try:
+            bootstrap = session.get(BOOTSTRAP_URL, timeout=BOOTSTRAP_TIMEOUT)
+            bootstrap.raise_for_status()
+            break
+        except requests.RequestException:
+            if attempt == REQUEST_RETRIES - 1:
+                raise
+            time.sleep(2.0 * (attempt + 1))
 
     rows = []
     raw_files = []
@@ -74,8 +86,22 @@ def main() -> None:
             "from": cur.strftime("%d-%m-%Y"),
             "to": chunk_end.strftime("%d-%m-%Y"),
         }
-        response = session.get(URL, params=params, timeout=60)
-        response.raise_for_status()
+        response = None
+        for attempt in range(REQUEST_RETRIES):
+            try:
+                response = session.get(URL, params=params, timeout=REQUEST_TIMEOUT)
+                response.raise_for_status()
+                break
+            except requests.RequestException:
+                if attempt == REQUEST_RETRIES - 1:
+                    raise
+                try:
+                    session.get(BOOTSTRAP_URL, timeout=BOOTSTRAP_TIMEOUT).raise_for_status()
+                except requests.RequestException:
+                    pass
+                time.sleep(2.0 * (attempt + 1))
+        if response is None:
+            raise SystemExit("NSE request failed without a response")
         try:
             payload = response.json()
         except ValueError as exc:
