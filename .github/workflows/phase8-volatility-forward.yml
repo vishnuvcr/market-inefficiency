@@ -124,21 +124,39 @@ jobs:
           print(json.dumps(m["stats"], indent=2))
           PY
 
+      - name: Resolve frozen historical source runs
+        id: historical
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          iv_run="$(gh run list             --repo "$GITHUB_REPOSITORY"             --workflow "Phase 4B — reconstruct NIFTY implied-volatility surfaces"             --branch research/v1.0-protocol             --status success             --limit 1             --json databaseId             --jq '.[0].databaseId')"
+          und_run="$(gh run list             --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol             --status success             --limit 1             --json databaseId             --jq '.[0].databaseId')"
+          test -n "$iv_run"
+          test -n "$und_run"
+          echo "iv_run=$iv_run" >> "$GITHUB_OUTPUT"
+          echo "und_run=$und_run" >> "$GITHUB_OUTPUT"
+          echo "Phase 4B source run: $iv_run"
+          echo "Underlying source run: $und_run"
+
       - name: Download frozen historical Phase 4B IV
         uses: actions/download-artifact@v5
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          artifact-ids: 10567387234
+          run-id: ${{ steps.historical.outputs.iv_run }}
+          pattern: phase4b-iv-surfaces-*
           path: data/old_iv
+          merge-multiple: true
 
       - name: Download frozen historical official underlying
         uses: actions/download-artifact@v5
         with:
           github-token: ${{ github.token }}
           repository: ${{ github.repository }}
-          artifact-ids: 10564212363
+          run-id: ${{ steps.historical.outputs.und_run }}
+          pattern: phase4a-official-nifty-index-*
           path: data/old_underlying
+          merge-multiple: true
 
       - name: Run Phase 8 forward validation
         run: |
