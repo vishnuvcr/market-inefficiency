@@ -287,7 +287,7 @@ jobs:
           r=json.loads((Path(os.environ["RUNNER_TEMP"]) / "phase7" / "PHASE7_STATISTICAL_VALIDATION_REPORT.json").read_text())
           assert r["status"]=="PASS", r
           assert r["cpcv"]["paths"] >= 20, r
-          assert r["data_partition"]["final_holdout"]["rows"] > 100, r
+          assert r["data_partition"]["final_holdout_rows_reserved"] > 100, r
           print("PHASE7_STATISTICAL_VALIDATION: PASS")
           print(json.dumps({
               "paths": r["cpcv"]["paths"],
