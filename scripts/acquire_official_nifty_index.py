@@ -15,6 +15,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import requests
+import cloudscraper
 
 URL = "https://www.niftyindices.com/Backpage.aspx/getHistoricaldatatabletoString"
 BOOTSTRAP_URL = "https://www.niftyindices.com/reports"
@@ -58,17 +59,22 @@ def main() -> None:
         "}"
     )
 
-    session = requests.Session()
-    session.headers.update({"User-Agent": HEADERS["User-Agent"]})
+    # NSE Indices currently fronts this endpoint with bot protection. Use a
+    # Cloudflare-compatible session, but keep the actual data endpoint and
+    # source unchanged.
+    session = cloudscraper.create_scraper(
+        browser={"browser": "chrome", "platform": "linux", "mobile": False}
+    )
+    session.headers.update(HEADERS)
 
     bootstrap = session.get(
-        BOOTSTRAP_URL,
+        "https://www.niftyindices.com/reports/historical-data",
         headers={
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8",
             "Referer": "https://www.niftyindices.com/",
             "User-Agent": HEADERS["User-Agent"],
         },
-        timeout=30,
+        timeout=10,
     )
     bootstrap.raise_for_status()
 
