@@ -171,6 +171,8 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
         raise SystemExit(f"{path}: overlapping lot-master intervals")
     x = x.merge(m[["_row_id", "lot_size"]], left_index=True, right_on="_row_id", how="left").set_index("_row_id")
     # lot_size is supplied exclusively by the PIT contract master.
+    # Drop any source-provided lot-size field so the PIT master remains authoritative.
+    x = x.drop(columns=["lot_size"], errors="ignore")
 
     # Remove the two documented external-input gaps from formal IV reconstruction.
     x = x[~x["date_key"].isin(GAP_DATES)].copy()
