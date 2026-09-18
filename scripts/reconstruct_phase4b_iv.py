@@ -1,14 +1,5 @@
 #!/usr/bin/env python3
-"""Phase 4B baseline NIFTY implied-volatility reconstruction.
-
-Price field: NSE EOD settlement.
-Model: Black-76 on an option-implied forward.
-Forward: put-call parity, median across paired strikes in [0.80, 1.20]
-spot moneyness, using the same PIT risk-free curve.
-
-The output is pointwise IV data plus deterministic daily-surface diagnostics.
-No future data are used.
-"""
+"""Phase 4B baseline NIFTY implied-volatility reconstruction."""
 from __future__ import annotations
 
 import argparse
@@ -50,7 +41,6 @@ def black76_price(F, K, T, r, sigma, option_type):
 
 
 def implied_vol_vector(price, F, K, T, r, option_type):
-    """Deterministic vectorized bisection inversion of Black-76."""
     price = np.asarray(price, dtype=float)
     F = np.asarray(F, dtype=float)
     K = np.asarray(K, dtype=float)
@@ -63,39 +53,33 @@ def implied_vol_vector(price, F, K, T, r, option_type):
         is_call, np.maximum(F - K, 0.0), np.maximum(K - F, 0.0)
     )
     upper = df * np.where(is_call, F, K)
-
     valid = (
-        np.isfinite(price)
-        & np.isfinite(F)
-        & np.isfinite(K)
-        & np.isfinite(T)
-        & np.isfinite(r)
-        & (F > 0)
-        & (K > 0)
-        & (T > MIN_T)
+        np.isfinite(price) & np.isfinite(F) & np.isfinite(K)
+        & np.isfinite(T) & np.isfinite(r)
+        & (F > 0) & (K > 0) & (T > MIN_T)
         & (price >= intrinsic - 1e-8)
         & (price <= upper + 1e-8)
     )
     iv = np.full(price.shape, np.nan)
-    active = valid.copy()
-    if not active.any():
+    if not valid.any():
         return iv, valid
 
-    idx = np.where(active)[0]
-    p = price[idx]
-    ff = F[idx]
-    kk = K[idx]
-    tt = T[idx]
-    rr = r[idx]
-    calls = is_call[idx]
-
+    idx = np.where(valid)[0]
+    p, ff, kk, tt, rr, calls = (
+        price[idx], F[idx], K[idx], T[idx], r[idx], is_call[idx]
+    )
     low = np.full(len(idx), MIN_IV)
     high = np.full(len(idx), MAX_IV)
-    for _ in range(64):
+
+    # 48 iterations gives much finer precision than required for quoted IVs
+    # while materially reducing runtime on the full 2.8M-row dataset.
+    for _ in range(48):
         mid = (low + high) * 0.5
-        call_p = black76_price(ff, kk, tt, rr, mid, "CE")
-        put_p = black76_price(ff, kk, tt, rr, mid, "PE")
-        model_p = np.where(calls, call_p, put_p)
+        model_p = np.where(
+            calls,
+            black76_price(ff, kk, tt, rr, mid, "CE"),
+            black76_price(ff, kk, tt, rr, mid, "PE"),
+        )
         too_low = model_p < p
         low[too_low] = mid[too_low]
         high[~too_low] = mid[~too_low]
@@ -124,32 +108,69 @@ def rate_for_ttm(y91, y182, y364, T):
     if d <= 91:
         return y91 / 100.0
     if d <= 182:
-        w = (d - 91.0) / (182.0 - 91.0)
+        w = (d - 91.0) / 91.0
         return ((1 - w) * y91 + w * y182) / 100.0
     if d <= 364:
-        w = (d - 182.0) / (364.0 - 182.0)
+        w = (d - 182.0) / 182.0
         return ((1 - w) * y182 + w * y364) / 100.0
     return y364 / 100.0
 
 
-def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd.DataFrame):
+def make_lot_lookup(lot: pd.DataFrame):
+    lm = lot[["contract_id", "effective_from", "effective_to", "lot_size"]].copy()
+    lm["effective_from"] = pd.to_datetime(lm["effective_from"])
+    lm["effective_to"] = pd.to_datetime(lm["effective_to"])
+    counts = lm.groupby("contract_id", sort=False).size()
+    if (counts <= 1).all():
+        return {
+            "mode": "direct_contract_lookup",
+            "lot_size": lm.set_index("contract_id")["lot_size"].to_dict(),
+        }
+    return {"mode": "interval_join", "table": lm}
+
+
+def attach_pit_lot(x: pd.DataFrame, lot_lookup, path: Path) -> pd.DataFrame:
+    if lot_lookup["mode"] == "direct_contract_lookup":
+        x["lot_size"] = x["contract_id"].map(lot_lookup["lot_size"])
+        return x
+
+    lm = lot_lookup["table"]
+    x = x.drop(columns=["lot_size"], errors="ignore")
+    m = (
+        x[["contract_id", "trade_date"]]
+        .reset_index(names="_row_id")
+        .merge(lm, on="contract_id", how="left")
+    )
+    m = m[
+        m["trade_date"].ge(m["effective_from"])
+        & m["trade_date"].le(m["effective_to"])
+    ]
+    if m["_row_id"].duplicated().any():
+        raise SystemExit(f"{path}: overlapping lot-master intervals")
+    return (
+        x.merge(
+            m[["_row_id", "lot_size"]],
+            left_index=True,
+            right_on="_row_id",
+            how="left",
+        )
+        .set_index("_row_id")
+    )
+
+
+def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot_lookup):
     x = pd.read_csv(path)
     required = {
-        "trade_date",
-        "expiry",
-        "strike",
-        "option_type",
-        "settlement",
-        "available_at",
-        "timestamp",
+        "trade_date", "expiry", "strike", "option_type", "settlement",
+        "available_at", "timestamp",
     }
     missing = required - set(x.columns)
     if missing:
         raise SystemExit(f"{path}: missing {sorted(missing)}")
 
     input_rows = len(x)
-    for col in ("trade_date", "expiry"):
-        x[col] = pd.to_datetime(x[col], errors="coerce")
+    x["trade_date"] = pd.to_datetime(x["trade_date"], errors="coerce")
+    x["expiry"] = pd.to_datetime(x["expiry"], errors="coerce")
     x["strike"] = pd.to_numeric(x["strike"], errors="coerce")
     x["settlement"] = pd.to_numeric(x["settlement"], errors="coerce")
     x["option_type"] = x["option_type"].astype("string").str.upper()
@@ -175,45 +196,18 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
         )
     ]
 
-    # Authoritative PIT lot size comes only from the contract master.
+    # Source-provided lot size is never accepted for the formal sample.
     x = x.drop(columns=["lot_size"], errors="ignore")
-    lm = lot[["contract_id", "effective_from", "effective_to", "lot_size"]].copy()
-    lm["effective_from"] = pd.to_datetime(lm["effective_from"])
-    lm["effective_to"] = pd.to_datetime(lm["effective_to"])
+    x = attach_pit_lot(x, lot_lookup, path)
 
-    m = (
-        x[["contract_id", "trade_date"]]
-        .reset_index(names="_row_id")
-        .merge(lm, on="contract_id", how="left")
-    )
-    m = m[
-        m["trade_date"].ge(m["effective_from"])
-        & m["trade_date"].le(m["effective_to"])
-    ]
-    if m["_row_id"].duplicated().any():
-        raise SystemExit(f"{path}: overlapping lot-master intervals")
-    x = (
-        x.merge(
-            m[["_row_id", "lot_size"]],
-            left_index=True,
-            right_on="_row_id",
-            how="left",
-        )
-        .set_index("_row_id")
-    )
-
-    # Explicit external-input coverage gaps are excluded from the formal sample.
     x = x[~x["date_key"].isin(GAP_DATES)].copy()
     positive_settlement_rows = int(x["settlement"].gt(0).sum())
-
     x = x[
         x["settlement"].gt(0)
         & x["spot"].gt(0)
         & x["strike"].gt(0)
         & x["T"].gt(MIN_T)
-        & x[["yield_pct_91", "yield_pct_182", "yield_pct_364"]]
-        .notna()
-        .all(axis=1)
+        & x[["yield_pct_91", "yield_pct_182", "yield_pct_364"]].notna().all(axis=1)
         & x["lot_size"].gt(0)
     ].copy()
 
@@ -234,9 +228,7 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
         .reset_index()
     )
     spot_by_exp = x.groupby(["date_key", "expiry_key"], as_index=False).agg(
-        spot=("spot", "first"),
-        T=("T", "first"),
-        r=("rf_simple", "first"),
+        spot=("spot", "first"), T=("T", "first"), r=("rf_simple", "first")
     )
     cp = cp.merge(spot_by_exp, on=["date_key", "expiry_key"], how="left")
     cp["moneyness"] = cp["strike"] / cp["spot"]
@@ -258,9 +250,7 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
                 "forward_candidate",
                 lambda s: float(s.quantile(0.75) - s.quantile(0.25)),
             ),
-            spot=("spot", "first"),
-            T=("T", "first"),
-            r=("r", "first"),
+            spot=("spot", "first"), T=("T", "first"), r=("r", "first"),
         )
     )
     fwd = fwd[fwd["forward"].gt(0)].copy()
@@ -271,13 +261,10 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
         }
 
     x = x.merge(
-        fwd,
-        on=["date_key", "expiry_key"],
-        how="inner",
-        suffixes=("", "_fwd"),
+        fwd, on=["date_key", "expiry_key"], how="inner",
+        suffixes=("", "_fwd")
     )
     x["moneyness"] = x["strike"] / x["forward"]
-
     iv, ok = implied_vol_vector(
         x["settlement"].to_numpy(),
         x["forward"].to_numpy(),
@@ -290,37 +277,24 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
     x["iv_valid"] = ok
     x = x[x["iv_valid"]].copy()
 
-    out_cols = [
-        "date_key",
-        "expiry_key",
-        "strike",
-        "option_type",
-        "settlement",
-        "spot",
-        "forward",
-        "parity_n",
-        "parity_iqr",
-        "T",
-        "ttm_days",
-        "rf_simple",
-        "moneyness",
-        "lot_size",
-        "iv",
-    ]
-    out = x[out_cols].rename(
-        columns={"date_key": "trade_date", "expiry_key": "expiry"}
-    )
+    out = x[
+        [
+            "date_key", "expiry_key", "strike", "option_type", "settlement",
+            "spot", "forward", "parity_n", "parity_iqr", "T", "ttm_days",
+            "rf_simple", "moneyness", "lot_size", "iv",
+        ]
+    ].rename(columns={"date_key": "trade_date", "expiry_key": "expiry"})
     out["model"] = "BLACK76_PARITY_FORWARD"
     out["price_field"] = "settlement"
     out["rf_rule"] = "PIT_RBI_91_182_364_LINEAR_SIMPLE_YIELD"
     out["forward_rule"] = "MEDIAN_PUT_CALL_PARITY_0.80_1.20_SPOT"
     out["gap_excluded"] = False
-    out["atm_distance"] = (out["moneyness"] - 1.0).abs()
 
     groups = ["trade_date", "expiry"]
-    atm = out.loc[out.groupby(groups)["atm_distance"].idxmin(), groups + ["iv"]].rename(
-        columns={"iv": "atm_iv"}
-    )
+    atm = out.loc[
+        out.groupby(groups)["moneyness"].apply(lambda s: (s - 1.0).abs().idxmin()),
+        groups + ["iv"],
+    ].rename(columns={"iv": "atm_iv"})
     surface = (
         out.groupby(groups, as_index=False)
         .agg(
@@ -335,9 +309,8 @@ def process_file(path: Path, underlying: pd.DataFrame, rf: pd.DataFrame, lot: pd
             iv_p10=("iv", lambda s: s.quantile(0.10)),
             iv_p90=("iv", lambda s: s.quantile(0.90)),
         )
-        .merge(atm, on=groups, how="left")
+        .merge(atm.reset_index(drop=True), on=groups, how="left")
     )
-    out = out.drop(columns=["atm_distance"])
     return out, surface, {
         "input_rows": input_rows,
         "positive_settlement_rows": positive_settlement_rows,
@@ -349,11 +322,7 @@ def append_gzip_frame(frame: pd.DataFrame, path: Path):
         return
     path.parent.mkdir(parents=True, exist_ok=True)
     frame.to_csv(
-        path,
-        index=False,
-        mode="at",
-        header=not path.exists(),
-        compression="gzip",
+        path, index=False, mode="at", header=not path.exists(), compression="gzip"
     )
 
 
@@ -375,6 +344,7 @@ def main():
 
     rf = build_rf_daily(args.risk_free)
     lot = pd.read_csv(args.lot_master)
+    lot_lookup = make_lot_lookup(lot)
 
     files = sorted(args.options_root.rglob("normalized/*.csv"))
     if not files:
@@ -385,30 +355,23 @@ def main():
     args.output.mkdir(parents=True, exist_ok=True)
     all_surface = []
     stats = {
-        "files": 0,
-        "input_rows": 0,
-        "positive_settlement_rows": 0,
-        "iv_rows": 0,
-        "surface_rows": 0,
-        "years": [],
-        "empty_files": 0,
+        "files": 0, "input_rows": 0, "positive_settlement_rows": 0,
+        "iv_rows": 0, "surface_rows": 0, "empty_files": 0,
+        "years": [], "lot_join_mode": lot_lookup["mode"],
     }
 
-    # Yearly gzip files are appended, never overwritten. This prevents later
-    # daily partitions from silently replacing earlier observations.
     for path in files:
-        iv, surface, file_stats = process_file(path, underlying, rf, lot)
+        iv, surface, file_stats = process_file(path, underlying, rf, lot_lookup)
         stats["files"] += 1
         stats["input_rows"] += file_stats["input_rows"]
         stats["positive_settlement_rows"] += file_stats["positive_settlement_rows"]
 
         if not iv.empty:
             stats["iv_rows"] += len(iv)
-            years = pd.to_datetime(iv["trade_date"]).dt.year.unique().tolist()
-            for year in years:
-                chunk = iv[pd.to_datetime(iv["trade_date"]).dt.year.eq(year)]
+            years = pd.to_datetime(iv["trade_date"]).dt.year
+            for year in sorted(years.unique()):
                 append_gzip_frame(
-                    chunk,
+                    iv[years.eq(year)],
                     args.output / f"iv_observations_{int(year)}.csv.gz",
                 )
                 stats["years"].append(int(year))
@@ -422,8 +385,9 @@ def main():
     if not all_surface:
         raise SystemExit("No IV observations reconstructed")
 
-    surface = pd.concat(all_surface, ignore_index=True)
-    surface = surface.sort_values(["trade_date", "expiry"]).reset_index(drop=True)
+    surface = pd.concat(all_surface, ignore_index=True).sort_values(
+        ["trade_date", "expiry"]
+    ).reset_index(drop=True)
     if surface.duplicated(["trade_date", "expiry"]).any():
         raise SystemExit("Duplicate daily surface keys detected")
     if surface["iv_median"].isna().any() or surface["forward"].le(0).any():
@@ -432,23 +396,17 @@ def main():
         raise SystemExit("ATM IV outside formal bounds")
 
     surface.to_csv(
-        args.output / "iv_surface_daily.csv.gz",
-        index=False,
-        compression="gzip",
+        args.output / "iv_surface_daily.csv.gz", index=False, compression="gzip"
     )
 
     stats["years"] = sorted(set(stats["years"]))
     manifest = {
-        "status": "PASS",
-        "phase": "4B",
-        "model": "Black-76",
+        "status": "PASS", "phase": "4B", "model": "Black-76",
         "price_field": "NSE EOD settlement",
         "forward_method": "put-call parity median across paired strikes with 0.80-1.20 spot moneyness",
         "risk_free": "PIT RBI 91/182/364 annual simple yields, linear interpolation",
-        "day_count": "ACT/365",
-        "gap_exclusions": sorted(GAP_DATES),
-        "iv_bounds": [MIN_IV, MAX_IV],
-        "stats": stats,
+        "day_count": "ACT/365", "gap_exclusions": sorted(GAP_DATES),
+        "iv_bounds": [MIN_IV, MAX_IV], "stats": stats,
         "surface_validation": {
             "daily_surface_rows": int(len(surface)),
             "unique_trade_dates": int(surface["trade_date"].nunique()),
