@@ -22,6 +22,7 @@ import pandas as pd
 import requests
 
 BASE = "https://archives.nseindia.com"
+FALLBACK_BASE = "https://nsearchives.nseindia.com"
 HEADERS = {
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/128 Safari/537.36",
     "Accept": "*/*",
@@ -59,15 +60,33 @@ def fetch_one(d: date, raw_dir: Path, norm_dir: Path, retries: int) -> dict:
     route, url = url_for(d)
     s = requests.Session()
     s.headers.update(HEADERS)
-    rec = {"date": d.isoformat(), "route": route, "url": url}
+    candidate_urls = [url]
+    if route == "legacy":
+        candidate_urls.append(url.replace(BASE, FALLBACK_BASE, 1))
+    rec = {"date": d.isoformat(), "route": route, "url": url, "candidate_urls": candidate_urls}
 
     for attempt in range(retries + 1):
         try:
-            r = s.get(url, timeout=60)
-            rec["http_status"] = r.status_code
-            if r.status_code == 404:
-                rec["status"] = "NO_ARCHIVE"
-                return rec
+            last_status = None
+            last_error = None
+            r = None
+            for candidate in candidate_urls:
+                try:
+                    rr = s.get(candidate, timeout=60)
+                    last_status = rr.status_code
+                    if rr.status_code == 200:
+                        r = rr
+                        rec["url"] = candidate
+                        break
+                    last_error = f"HTTP {rr.status_code}"
+                except requests.RequestException as exc:
+                    last_error = f"{type(exc).__name__}: {exc}"
+            rec["http_status"] = last_status
+            if r is None:
+                if last_status == 404:
+                    rec["status"] = "NO_ARCHIVE"
+                    return rec
+                raise requests.HTTPError(last_error or "all archive hosts failed")
             r.raise_for_status()
             raw = r.content
             rec["bytes"] = len(raw)
