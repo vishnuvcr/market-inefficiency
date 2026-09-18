@@ -56,13 +56,21 @@ def fmt_nse_date(ts: pd.Timestamp) -> str:
 
 
 def request_chunk(session: requests.Session, start: pd.Timestamp, end: pd.Timestamp) -> list[dict]:
-    inner = {
-        "name": INDEX_NAME,
-        "indexName": INDEX_NAME,
-        "startDate": fmt_nse_date(start),
-        "endDate": fmt_nse_date(end),
+    # The historical-data endpoint expects cinfo as a string containing the
+    # ASP.NET-style object. Keep the exact field names used by the public page.
+    payload = {
+        "cinfo": (
+            "{'name':'"
+            + INDEX_NAME
+            + "','indexName':'"
+            + INDEX_NAME
+            + "','startDate':'"
+            + fmt_nse_date(start)
+            + "','endDate':'"
+            + fmt_nse_date(end)
+            + "'}"
+        )
     }
-    payload = {"cinfo": json.dumps(inner, separators=(",", ":"))}
 
     last_error = None
     for attempt in range(1, 5):
@@ -200,6 +208,8 @@ def main() -> None:
                 "rows_usable": len(frame),
             }
         )
+        if chunk_end < end:
+            time.sleep(2)
         cur = chunk_end + pd.Timedelta(days=1)
 
     out = pd.concat(frames, ignore_index=True).sort_values("date").reset_index(drop=True)
