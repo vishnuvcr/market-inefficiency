@@ -92,8 +92,8 @@ jobs:
 
       - name: Build contract-level NIFTY lot-size master
         run: |
-          python scripts/build_nifty_contract_master.py \\
-            --normalized-dir data/phase4a_artifacts \\
+          python scripts/build_nifty_contract_master.py \
+            --normalized-dir data/phase4a_artifacts \
             --output data/phase4a/NIFTY_CONTRACT_MASTER.csv
 
       - name: Upload reconciliation report
