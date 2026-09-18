@@ -26,37 +26,28 @@ jobs:
 
       - name: Validate repository protocol
         run: python scripts/validate_protocol.py
-
       - name: Validate Phase 2 data contract
         run: python scripts/validate_data_schema.py
-
       - name: Validate Phase 2 synthetic fixture
         run: python scripts/validate_phase2_fixture.py
-
       - name: Test NSE F&O EOD normalization adapter
         run: python scripts/test_nse_fo_eod_adapter.py
-
       - name: Test Kaggle NIFTY normalization adapter
         run: python scripts/test_kaggle_nifty_adapter.py
-
       - name: Test Phase 2 quality and contract reconciliation
         run: python scripts/test_phase2_quality_and_contracts.py
-
       - name: Test immutable snapshot manifest
         run: python scripts/test_snapshot_manifest.py
-
       - name: Test Phase 3.1 stylized-fact diagnostics
         run: python scripts/test_phase3_stylized_facts.py
-
       - name: Test Phase 3.2 realized-volatility diagnostics
         run: python scripts/test_phase3_realized_volatility.py
-
       - name: Test Phase 3.3 volatility-persistence diagnostics
         run: python scripts/test_phase3_volatility_persistence.py
-
       - name: Test Phase 3.4 jump diagnostics
         run: python scripts/test_phase3_jump_diagnostics.py
-
+      - name: Test Phase 3.5 memory/dependence diagnostics
+        run: python scripts/test_phase3_memory_dependence.py
       - name: Publish research configuration artifact
         uses: actions/upload-artifact@v4
         with:
