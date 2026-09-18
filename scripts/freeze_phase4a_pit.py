@@ -106,6 +106,7 @@ def main() -> int:
     }
     by_date = []
     sample_parts = []
+    missing_date_counts = {}
 
     for path in normalized_files:
         x = pd.read_csv(path)
@@ -216,6 +217,10 @@ def main() -> int:
         counters["lot_missing_rows"] += int(x["lot_missing"].sum())
         counters["lot_not_available_rows"] += int(x["lot_not_available"].sum())
         counters["risk_free_missing_rows"] += int(x["risk_free_missing"].sum())
+        missing_mask = x["underlying_missing"] | x["risk_free_missing"]
+        if missing_mask.any():
+            for dk, n in x.loc[missing_mask, "date_key"].value_counts().items():
+                missing_date_counts[str(dk)] = missing_date_counts.get(str(dk), 0) + int(n)
         counters["expiry_invalid_rows"] += int(x["expiry_invalid"].sum())
         counters["positive_settlement_rows"] += int(x["settlement"].gt(0).sum())
 
@@ -249,7 +254,8 @@ def main() -> int:
             counters["sample_rows"] += min(len(keep), max(0, args.sample_rows - counters["sample_rows"]))
 
     if counters["underlying_missing_rows"] or counters["lot_missing_rows"] or counters["lot_not_available_rows"] or counters["risk_free_missing_rows"] or counters["expiry_invalid_rows"]:
-        raise SystemExit(f"PIT join failed: {counters}")
+        top_missing = sorted(missing_date_counts.items(), key=lambda kv: kv[1], reverse=True)[:10]
+        raise SystemExit(f"PIT join failed: {counters}; missing_dates={top_missing}")
 
     coverage = pd.concat(by_date, ignore_index=True).sort_values("date_key")
     sample = pd.concat(sample_parts, ignore_index=True).head(args.sample_rows) if sample_parts else pd.DataFrame()
