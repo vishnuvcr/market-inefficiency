@@ -7,7 +7,7 @@ trade_date,status,source_url,note
 2020-11-30,HOLIDAY_VERIFIED,https://www.nseclearing.in/sites/default/files/2021-11/nsccl_fo_holidays.pdf,annual F&O holiday schedule
 2020-12-25,HOLIDAY_VERIFIED,https://www.nseclearing.in/sites/default/files/2021-11/nsccl_fo_holidays.pdf,annual F&O holiday schedule
 2021-03-30,TRADING_DAY_ARCHIVE_MISSING,https://indianexpress.com/article/business/market/markets-live-updates-bse-sensex-nse-nifty-50-stocks-shares-global-cues-7251043/,NSE traded normally; no archive found in primary/fallback/secondary acquisition routes
-2021-01-26,HOLIDAY_VERIFIED,https://www.nseindia.com,annual F&O holiday schedule
+2021-01-26,HOLIDAY_VERIFIED,https://zerodha.com/marketintel/bulletin/?page=39,secondary exchange-calendar corroboration
 2021-03-11,HOLIDAY_VERIFIED,https://www.nseindia.com,annual F&O holiday schedule
 2021-03-29,HOLIDAY_VERIFIED,https://www.nseindia.com,annual F&O holiday schedule
 2021-04-02,HOLIDAY_VERIFIED,https://www.nseindia.com,annual F&O holiday schedule
