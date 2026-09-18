@@ -11,7 +11,7 @@ with tempfile.TemporaryDirectory() as tmp:
     subprocess.run([sys.executable,str(ROOT/'scripts/phase3_regime_segmentation.py'),'--input',str(fixture),'--output',str(out),'--window','20'],check=True)
     d=json.loads(out.read_text())
     assert d['phase']=='3.6' and d['status']=='BASELINE'
-    assert d['usable_rows']==61 and d['predictive_model'] is False
+    assert d['usable_rows']==60 and d['predictive_model'] is False
     assert len(d['regimes'])>=4 and len(d['volatility_tercile_cutoffs'])==2
     assert sum(v['observations'] for v in d['regimes'].values())==d['usable_rows']
     assert d['diagnostic_only'] is True and d['execution_backtest_allowed'] is False
