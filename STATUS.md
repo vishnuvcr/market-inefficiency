@@ -1,12 +1,12 @@
 # Research Status
 
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 
 ## Overall phase
 
 **Phase 4 — Preregistered option-market hypothesis testing**
 
-Status: **PHASE 4A PIT SNAPSHOT FROZEN; PHASE 4B IV RECONSTRUCTION RUNNING**
+Status: **PHASE 4A PIT SNAPSHOT FROZEN; PHASE 4B IV RECONSTRUCTION PASSED; PHASE 4C VRP DIAGNOSTICS PASSED**
 
 Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now building the point-in-time option dataset required for falsifiable VRP, jump-risk and surface-shape tests.
 
@@ -18,8 +18,8 @@ Phase 3 real-data discovery is complete as a descriptive layer. Phase 4 is now b
 | 1. Literature/source validation | 🟢 Complete | 100% | Exit gate passed |
 | 2. Data engineering | 🟢 Core snapshot validated | 85% | Derivatives source acceptance |
 | 3. Stylized facts/discovery | 🟢 Real-data discovery complete | 100% | Findings frozen as descriptive evidence |
-| 4. Option-market hypotheses | 🟡 In progress | 40% | Phase 4A PIT audit |
-| 5. Multimodal regime model | ⚪ Not started | 0% | Leakage-safe option/underlying regime dataset |
+| 4. Option-market hypotheses | 🟢 Core PIT/IV + VRP diagnostic gates passed | 70% | Formal state-dependent / surface tests |
+| 5. Multimodal regime model | 🟡 Prepared by Phase 4C PIT features | 20% | Leakage-safe multimodal feature construction |
 | 6. Portfolio/execution | ⚪ Not started | 0% | Net-of-cost simulator |
 | 7. Statistical validation | ⚪ Not started | 0% | CPCV + DSR + PBO |
 | 8. Paper trading | ⚪ Not started | 0% | Post-validation only |
@@ -109,12 +109,61 @@ The remaining external-input gate is now operationally specified without inventi
 - `scripts/validate_phase4a_external_inputs.py` provides deterministic schema, coverage, duplicate and positivity checks and records SHA-256 hashes for the three external inputs.
 - The validator deliberately does **not** infer, backfill or silently download data; the final PIT snapshot must be based on auditable source files.
 
-This advances the engineering gate but does **not** pass the PIT audit. Phase 4B remains blocked until the actual external input files are acquired, validated, timestamped for PIT use, and joined to the option snapshot.
+This engineering layer was subsequently completed by the immutable external-input acquisition, PIT join, and Phase 4A snapshot freeze. Phase 4B is therefore no longer blocked by the external-input gate.
+
+## Phase 4B — IV reconstruction PASSED
+
+GitHub Actions run **#9** (`35393747845`) completed successfully.
+
+Reconstruction used NSE EOD settlement prices, PIT NIFTY 50 close, PIT RBI 91/182/364-day simple yields with linear interpolation, ACT/365, and median same-day put-call-parity forwards from paired CE/PE strikes with strike/spot moneyness in **0.80–1.20**. IV was bounded to **(1e-6, 5.0]** and the documented gap dates remained excluded.
+
+Validation results:
+- **2,859,228** input option rows.
+- **2,641,708** valid IV rows.
+- **28,883** daily expiry surfaces.
+- **1,510** unique option-observation dates.
+- **349** unique expiries.
+- **0** duplicate trade-date/expiry surface keys.
+- ATM IV range **4.01%–71.86%**, median **16.88%**.
+- Median parity-pair count **12**.
+- Explicit gap exclusions remain **2021-03-30** and **2024-03-02**.
+
+The corrected yearly IV partitions were uploaded as an immutable Phase 4B artifact.
+
+## Phase 4C — variance-risk-premium diagnostic PASSED
+
+GitHub Actions run **#7** (`35394486561`) completed successfully.
+
+The diagnostic constructs constant-maturity ATM implied variance by linear interpolation in total variance and compares it with subsequent NIFTY realized variance over the matched calendar horizon. The regime variable is a 20-session trailing realized-volatility measure using only information available through the trade date.
+
+### 30-calendar-day horizon
+- **n = 1,489** matched observations.
+- Mean implied-minus-realized variance: **0.01614**.
+- Newey-West SE: **0.00305**; 95% CI **0.01016 to 0.02213**.
+- HAC t-statistic: **5.29**.
+- Positive variance premium in **81.5%** of observations.
+- Mean implied-minus-realized volatility: **4.28 percentage points**; 95% CI **3.18–5.37 pp**.
+- Mean variance premium by prior-volatility regime: **0.00820 LOW**, **0.01019 MID**, **0.02159 HIGH**.
+
+### 60-calendar-day horizon
+- **n = 1,471** matched observations.
+- Mean implied-minus-realized variance: **0.01867**.
+- Newey-West SE: **0.00478**; 95% CI **0.00930 to 0.02805**.
+- HAC t-statistic: **3.90**.
+- Positive variance premium in **80.8%** of observations.
+- Mean implied-minus-realized volatility: **4.60 percentage points**; 95% CI **2.93–6.27 pp**.
+- Mean variance premium by prior-volatility regime: **0.00868 LOW**, **0.00998 MID**, **0.02632 HIGH**.
+
+### Usable research conclusion
+
+Within the current **2020-04-13 to 2026-05-14** PIT sample, the first formal diagnostic supports a **persistent positive variance risk premium**: option-implied variance was, on average, above subsequently realized NIFTY variance at both 30- and 60-calendar-day horizons. The diagnostic also shows larger average variance premia in the pre-existing high-volatility regime.
+
+This is **not yet evidence of a tradable strategy**. The estimate uses overlapping future-return outcomes, settlement-based option IVs, and a descriptive regime split. Next-stage work must test economic costs, leverage/risk limits, state-transition robustness, surface-shape effects, cross-validation/holdout performance, and multiple-testing controls (CPCV/DSR/PBO) before any strategy-level conclusion.
 
 ## Immediate next gates
 
-1. Acquire and validate the RBI risk-free term structure with explicit PIT publication/availability evidence.
-2. Freeze the 2021-03-30 trading-day archive gap as an exclusion mask unless an independent pre-decision source is found.
-3. Perform the final PIT join of option EOD + official NIFTY underlying + contract-lot master + risk-free curve.
-4. Run the final PIT/leakage/coverage audit and freeze the immutable Phase 4A snapshot.
-5. Begin Phase 4B implied-volatility/surface reconstruction only after the PIT input gate passes.
+1. Freeze the Phase 4B IV artifact and provenance in the research status ledger.
+2. Run formal H-A2 state-dependence tests with leakage-safe regime features and interaction terms.
+3. Run H-B1 jump-risk and H-C1 surface-shape diagnostics from the same PIT surface.
+4. Build the multimodal regime dataset for Phase 5.
+5. Only after these falsification tests, build the net-of-cost portfolio/execution layer.
