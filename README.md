@@ -40,9 +40,9 @@ H — Integrated Research Portfolio
 
 ## Current status
 
-**Phase 3 — Stylized facts and inefficiency discovery — IN PROGRESS (~30%)**
+**Phase 3 — Stylized facts and inefficiency discovery — IN PROGRESS (~40%)**
 
-Phase 0 governance and Phase 1 source validation are complete. Phase 2 schema/PIT controls, synthetic validation, adapter interfaces, NSE F&O EOD normalization, Kaggle NIFTY/India VIX normalization, quality/exclusion tooling and immutable snapshot tooling are implemented. Phase 3.1–3.3 now have deterministic stylized-fact, realized-volatility and volatility-persistence diagnostics. The Kaggle source is classified as a third-party research snapshot suitable for descriptive research; it is not yet DATA-READY because the exact external snapshot bytes still require local acquisition, hashing and validation. Historical option quote/depth and execution research remains gated on an appropriate source.
+Phase 0 governance and Phase 1 source validation are complete. Phase 2 schema/PIT controls, synthetic validation, adapter interfaces, NSE F&O EOD normalization, Kaggle NIFTY/India VIX normalization, quality/exclusion tooling and immutable snapshot tooling are implemented. Phase 3.1–3.4 now have deterministic stylized-fact, realized-volatility, volatility-persistence and jump diagnostics. The Kaggle source is classified as a third-party research snapshot suitable for descriptive research; it is not yet DATA-READY because the exact external snapshot bytes still require local acquisition, hashing and validation. Historical option quote/depth and execution research remains gated on an appropriate source.
 
 ## Evidence policy
 
