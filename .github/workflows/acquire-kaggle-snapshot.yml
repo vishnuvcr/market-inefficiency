@@ -57,46 +57,73 @@ jobs:
           mkdir -p data/kaggle_analysis
           python - <<'PY'
           import pandas as pd, pathlib, re
-          from zoneinfo import ZoneInfo
+          from datetime import time
 
           src=pathlib.Path('data/kaggle_snapshot/NIFTY 50_minute.csv')
           df=pd.read_csv(src)
+          print("RAW COLUMNS:", list(df.columns))
+          print("RAW SHAPE:", df.shape)
+
+          def norm(s): return re.sub(r'[^a-z0-9]+','',str(s).strip().lower())
+          cmap={norm(c):c for c in df.columns}
           def pick(names):
-              m={re.sub(r'\\s+','',str(c)).lower():c for c in df.columns}
               for n in names:
-                  k=re.sub(r'\\s+','',n).lower()
-                  if k in m: return m[k]
+                  if norm(n) in cmap: return cmap[norm(n)]
               return None
-          ts=pick(['timestamp','datetime','date time','date_time','datetime_ist'])
+
+          ts=pick(['timestamp','datetime','date time','date_time','datetime_ist','datetimeist'])
           date_col=pick(['date'])
           time_col=pick(['time'])
+
           if ts:
-              t=pd.to_datetime(df[ts],errors='coerce')
+              t=pd.to_datetime(df[ts],errors='coerce',format='mixed')
           elif date_col:
               raw=df[date_col].astype(str)
-              if time_col: raw=raw+' '+df[time_col].astype(str)
-              t=pd.to_datetime(raw,errors='coerce',dayfirst=True)
-          else: raise SystemExit('No timestamp/date column found')
-          if getattr(t.dt,'tz',None) is None: t=t.dt.tz_localize('Asia/Kolkata',ambiguous='NaT',nonexistent='NaT')
-          else: t=t.dt.tz_convert('Asia/Kolkata')
+              if time_col: raw=raw.str.strip()+' '+df[time_col].astype(str).str.strip()
+              t=pd.to_datetime(raw,errors='coerce',format='mixed',dayfirst=True)
+          else:
+              raise SystemExit(f'No timestamp/date column found. Columns={list(df.columns)}')
+
+          print("PARSED TIMESTAMPS:", int(t.notna().sum()), "/", len(t))
+          if t.notna().sum()==0:
+              print(df.head(5).to_string(index=False))
+              raise SystemExit("Timestamp parsing produced zero valid rows")
+
+          if getattr(t.dt,'tz',None) is None:
+              t=t.dt.tz_localize('Asia/Kolkata',ambiguous='NaT',nonexistent='NaT')
+          else:
+              t=t.dt.tz_convert('Asia/Kolkata')
           df['ts']=t
+
           cols={x:pick([x]) for x in ['open','high','low','close','volume']}
-          if any(cols[x] is None for x in ['open','high','low','close']): raise SystemExit(f'Missing OHLC columns: {cols}')
-          for x,c in cols.items():
-              if c: df[x]=pd.to_numeric(df[c],errors='coerce')
+          print("PRICE COLUMNS:", cols)
+          missing=[x for x in ['open','high','low','close'] if cols[x] is None]
+          if missing: raise SystemExit(f'Missing OHLC columns: {missing}; columns={list(df.columns)}')
+
+          for x,col in cols.items():
+              if col: df[x]=pd.to_numeric(df[col],errors='coerce')
+
           df=df.dropna(subset=['ts','open','high','low','close']).sort_values('ts')
-          tm=df['ts'].dt.time
-          from datetime import time
-          df=df[(tm>=time(9,15)) & (tm<=time(15,30))].copy()
+          if len(df)==0: raise SystemExit("No valid OHLC rows after cleaning")
+
+          # NSE regular session: 09:15 through 15:30 IST.
+          mins=df['ts'].dt.hour*60+df['ts'].dt.minute
+          df=df[(mins>=9*60+15) & (mins<=15*60+30)].copy()
+          if len(df)==0: raise SystemExit("No observations inside 09:15-15:30 IST session")
+
           df['session_date']=df['ts'].dt.date
           agg={'open':'first','high':'max','low':'min','close':'last'}
-          if 'volume' in df: agg['volume']='sum'
+          if cols['volume']: agg['volume']='sum'
           daily=df.groupby('session_date',sort=True).agg(agg).reset_index()
-          daily['timestamp']=pd.to_datetime(daily['session_date']).dt.tz_localize('Asia/Kolkata').dt.tz_convert('UTC')
-          out=daily[['timestamp','open','high','low','close'] + (['volume'] if 'volume' in daily else [])]
-          out.to_csv('data/kaggle_analysis/NIFTY50_daily.csv',index=False)
-          print('Sessionized rows:',len(out),'range:',out.timestamp.min(),out.timestamp.max())
-          print(out.head(2).to_string(index=False))
+
+          session_dates=pd.to_datetime(daily['session_date'])
+          daily['timestamp']=session_dates.dt.tz_localize('Asia/Kolkata').dt.tz_convert('UTC')
+          keep=['timestamp','open','high','low','close'] + (['volume'] if cols['volume'] else [])
+          daily[keep].to_csv('data/kaggle_analysis/NIFTY50_daily.csv',index=False)
+
+          print("SESSIONIZED ROWS:",len(daily))
+          print("RANGE:",daily['timestamp'].min(),daily['timestamp'].max())
+          print(daily[keep].head(3).to_string(index=False))
           PY
       - name: Run Phase 3 descriptive diagnostics
         run: |
