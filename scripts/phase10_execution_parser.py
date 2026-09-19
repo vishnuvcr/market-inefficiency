@@ -92,9 +92,9 @@ def _price_paise(x: str, name: str) -> float:
     return v / 100.0
 
 
-def _parse_fixed(line: str, slices, expected_length: int) -> dict[str, str]:
-    if len(line) != expected_length:
-        raise ValueError(f"record length {len(line)} != expected {expected_length}")
+def _parse_fixed(line: str, slices, minimum_length: int) -> dict[str, str]:
+    if len(line) < minimum_length:
+        raise ValueError(f"record length {len(line)} < minimum common width {minimum_length}")
     return {name: line[a:b] for name, a, b in slices}
 
 
