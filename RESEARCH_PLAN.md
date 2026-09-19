@@ -125,9 +125,22 @@ Use historical bid/ask/order/trade information, leg synchronization, depth, marg
 ### Phase 9A — Execution-grade surface-relative-value validation
 **Goal:** convert the surviving surface-dynamics signal into executable, market-neutral option strategies using historical bid/ask/order-trade information and realistic costs.
 
-Status: **10% — protocol frozen; execution-data acquisition gate open.**
+Status: **protocol frozen; execution-data acquisition gate remains open.**
 
-The full protocol is in `docs/PHASE9A_EXECUTION_PROTOCOL.md`. The next gate is data availability and PIT validation for historical execution information. Candidate strategy families are broad by design; no single structure is preselected as the winner.
+The full protocol is in docs/PHASE9A_EXECUTION_PROTOCOL.md. The candidate library remains broad by design. EOD settlement is not treated as historical bid/ask or executable fill data.
+
+### Phase 9B — Frozen surface-signal settlement-proxy validation
+**Goal:** test one mechanism-first, pre-specified translation of the strongest frozen surface predictor into a reproducible NIFTY option structure before spending effort on quote-level execution modelling.
+
+Status: **completed; rejected for promotion.**
+
+The tested rule used a same-expiry approximately 10Δ/50Δ put vertical, 45–75 days to expiry, 30-calendar-day holding period, one entry delta hedge and no overlapping positions. The model used a leakage-controlled expanding Ridge specification with the Phase 8C surface features and a 30-day future downside-skew target.
+
+Fresh forward coverage from 2026-05-15 through 2026-09-18 contained 4 non-overlapping trades and produced -₹14,828 total settlement-proxy P&L, 25% win rate and an approximate event annualized Sharpe of -0.87. The forecast itself remained predictive of future surface change (forward R² 0.3029; correlation 0.5695), so the rejection is a monetization result rather than evidence that the surface predictor disappeared.
+
+The reverse-sign result is retained as a negative control and cannot be promoted from the same four observations without post-hoc selection. The one-day-delay and random-entry controls also showed instability. Detailed results are in docs/PHASE9B_RESULTS.md.
+
+**Phase 9B decision:** REJECTED for capital trading and for paper-trading promotion. The rule is retained only as a reproducible paper-monitoring specification. The next valid research step is execution-grade historical quote/order-trade validation or a separately preregistered new monetization hypothesis; the fresh 2026 forward period must not be reused to tune a replacement strategy.
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
@@ -159,7 +172,7 @@ Each phase produces machine-readable outputs plus a human-readable report. Requi
 
 ## Current research decision
 
-The broad hypothesis remains open, but the first direct-direction predictive strategy is not supported. The current candidate fails development-period CPCV robustness despite a modest positive final-holdout settlement proxy at low assumed costs. The stronger remaining predictive target is future volatility expansion, which should now be translated into independently specified volatility-sensitive strategy families. The option-surface skew signal remains a separate branch.
+The broad hypothesis remains open. Phase 8 rejected the volatility-state directional families on fresh forward data. Phase 9B then showed that the strongest surviving surface-dynamics predictor still forecasts future surface shape, but the tested direct skew-vertical monetization failed its fresh-forward settlement-proxy gate. No NIFTY strategy is currently promoted to paper trading. The option-surface signal remains the main predictive research branch, with execution-grade data acquisition as the next mandatory gate.
 
 ## Current baseline decision
 
