@@ -98,3 +98,26 @@ Continuity policy now:
 - No new optimization or strategy-selection work may proceed unless it is consistent with the frozen methodology recorded there.
 
 This entry also records that the repository intentionally stores decision rationale and evidence, rather than hidden private chain-of-thought.
+
+## 2026-09-19 — User continuity requirement reaffirmed
+
+User explicitly instructed:
+- “Update every phase update, every log, every decision, and all our chat and your thinking into a file in GitHub repo, because you seem to be forgetting things when moving to New chats.”
+- “I want you to look into the GitHub repo file, before moving into any step.”
+
+Action taken before any new research step:
+- Read the continuity master, status, research plan, chat/decision log, Phase 14A protocol/results, current PR metadata and workflow state.
+- Verified the active branch and current head.
+- Verified the latest Research Protocol Check for the inspected head was successful.
+- Did not start a new research/optimization action during this checkpoint.
+
+Decision:
+- Treat the repository as the cross-chat source of truth.
+- The mandatory pre-step inspection protocol is now operational, not merely documented.
+- Every substantive future phase/result/decision/blocker/user requirement must be appended to the continuity record.
+- Exact private hidden chain-of-thought is not stored. The repository stores the reproducible/actionable reasoning summary, evidence, corrections, decision rationale, frozen rules and next-step gates instead.
+- No optimization or post-hoc strategy selection is opened by this continuity checkpoint.
+
+Current next-step gate remains unchanged:
+`Phase 14A.0 data readiness -> standalone single-mechanism screens -> cost/CPCV/multiple-testing controls -> preregistered equal-risk combinations -> separately frozen optimization only for mechanisms that clear discovery -> untouched later validation`.
+
