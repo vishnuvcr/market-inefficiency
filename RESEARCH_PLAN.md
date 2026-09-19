@@ -168,21 +168,37 @@ The official NSE historical order/trade archive, or an equivalent licensed times
 ### Phase 13 — Executable CPCV/PBO/DSR validation
 **Goal:** test the full strategy library without post-hoc selection, using only executable fills, and retain complete path distributions.
 
-Status: **protocol next; implementation can be completed before the economic dataset arrives.**
+Status: **protocol frozen; harness implemented; economic run remains blocked by genuine historical execution data.**
 
 The preregistration will freeze the candidate set, cost grid, purge/embargo rules, selection rule, risk normalization, and promotion gates before any executable P&L is observed. The phase will not use the rejected 2026-05-15 through 2026-09-18 forward window to tune a replacement candidate.
 
-### Phase 14 — Untouched executable forward validation
+### Phase 14A — Broad inefficiency discovery and combination screening
+**Goal:** test the broader inefficiency families already identified in the research program before any parameter optimization, first as standalone mechanisms and then as preregistered equal-risk combinations.
+
+Status: **protocol frozen; data-readiness gate next.**
+
+The phase covers time-series equity effects, cross-sectional equity effects, futures basis/roll effects, option variance/jump/surface effects, index-vs-constituent dispersion/breadth, event drift/rebalancing/expiry effects, cross-market lead/lag, dependence/regime effects, and microstructure effects. The hypothesis registry is frozen in `data/phase14/inefficiency_hypothesis_registry.csv` and the detailed protocol is in `docs/PHASE14_BROAD_INEFFICIENCY_DISCOVERY.md`.
+
+Phase 14A uses the same mandatory lifecycle:
+`hypothesis -> preregistration -> data snapshot -> feature construction -> fixed baseline -> single-mechanism screen -> fixed-cost trading proxy -> leakage audit -> CPCV -> multiple-testing control -> stress tests -> untouched prospective holdout -> decision`.
+
+The discovery screen deliberately forbids lookback/threshold/holding-period/weight optimization. A mechanism must first show an economically meaningful effect under its frozen simple translation. Only then can a separately preregistered optimization phase be opened.
+
+Phase 14A.0 is the immediate gate: validate data availability and point-in-time sufficiency for every mechanism. The project must not fabricate missing quotes, infer historical bid/ask from settlement, or treat current constituent membership as historical membership.
+
+The rejected 2026-05-15 through 2026-09-18 period remains frozen and cannot be reused to select a new Phase 14A rule. A genuinely later prospective holdout will be reserved after the Phase 14A specification freeze.
+
+### Phase 15 — Untouched executable forward validation
 **Goal:** evaluate the frozen strategy specification once on an untouched later period.
 
 Status: **not started; depends on Phase 13.**
 
-### Phase 15 — Paper trading
+### Phase 16 — Paper trading
 **Goal:** prospective implementation validation before capital.
 
 Status: **not started; only eligible after Phase 14.**
 
-### Phase 16 — Live governance
+### Phase 17 — Live governance
 **Goal:** monitor drift, liquidity, execution quality and retirement/revalidation triggers.
 
 Status: **not started.**
