@@ -1,0 +1,74 @@
+{
+  "phase": "14A.1",
+  "status": "DISCOVERY_IN_PROGRESS",
+  "development_end": "2026-05-14",
+  "forward_excluded": "2026-05-15_to_2026-09-18",
+  "tracks": {
+    "time_series_equity": {
+      "TS_MOMENTUM": {
+        "n_events": 297,
+        "zero_cost_mean": 0.0014812981222523689,
+        "zero_cost_sharpe": 0.4997970197665371,
+        "zero_cost_p": 0.11299739842435981,
+        "cpcv_median": 0.5895736286466173,
+        "cpcv_q10": -0.778528557089126,
+        "positive_path_fraction": 0.6785714285714286,
+        "mean_at_5bps": 0.00048129812225236796,
+        "mean_at_10bps": -0.0005187018777476327,
+        "decision": "REJECTED_CPCV"
+      },
+      "TS_REVERSAL": {
+        "n_events": 297,
+        "zero_cost_mean": 0.00024362597032248848,
+        "zero_cost_sharpe": 0.08200241353693787,
+        "zero_cost_p": 0.42117523584290417,
+        "cpcv_median": 0.09383858585433193,
+        "cpcv_q10": -0.5050883079848882,
+        "positive_path_fraction": 0.5357142857142857,
+        "mean_at_5bps": -0.0007563740296775124,
+        "mean_at_10bps": -0.0017563740296775133,
+        "decision": "REJECTED_NO_SIGNAL"
+      },
+      "COMBO_TS": {
+        "n_events": 100,
+        "zero_cost_mean": 0.002561512277473663,
+        "zero_cost_sharpe": 0.7855015842052488,
+        "zero_cost_p": 0.13560657765335515,
+        "cpcv_median": 0.4615699894512886,
+        "cpcv_q10": -0.7741672556289048,
+        "positive_path_fraction": 0.6071428571428571,
+        "mean_at_5bps": 0.0015615122774736622,
+        "mean_at_10bps": 0.0005615122774736617,
+        "decision": "REJECTED_CPCV"
+      },
+      "BH_qvalues_zero_cost": {
+        "TS_MOMENTUM": 0.20340986648003273,
+        "TS_REVERSAL": 0.42117523584290417,
+        "COMBO_TS": 0.20340986648003273
+      }
+    },
+    "options_vrp": {
+      "signal": "30D ATM IV > trailing 20-session realised volatility",
+      "strategy": "short nearest-30D ATM straddle to expiry",
+      "n_nonoverlapping_events": 69,
+      "zero_cost_mean_return": 0.009660464259439127,
+      "zero_cost_event_sharpe": 1.0427336935366844,
+      "zero_cost_one_sided_p": 0.0019489857809254871,
+      "zero_cost_win_rate": 0.6811594202898551,
+      "cpcv_median_sharpe": 0.9743080830866874,
+      "cpcv_q10_sharpe": 0.3804835526305503,
+      "cpcv_positive_path_fraction": 1,
+      "mean_at_20bps_side": 0.009504399670793109,
+      "sign_flip_mean": -0.009660464259439127,
+      "unconditional_nonoverlap_short_straddle_mean": 0.008491974980889579,
+      "unconditional_nonoverlap_short_straddle_sharpe": 1.0206623785869433,
+      "decision": "DISCOVERY_POSITIVE_PENDING_MULTIPLE_TESTING_EXECUTION_AND_LATER_HOLDOUT"
+    }
+  },
+  "notes": [
+    "All results use settlement proxies; none is executable P&L.",
+    "The VRP result is strong but the unconditional short-straddle baseline is also positive, so the incremental value of the state filter appears modest in this first screen and must be tested rather than assumed.",
+    "The 2026-05-15 through 2026-09-18 period remains frozen and is not used for selection or tuning.",
+    "No candidate is optimized in Phase 14A.1."
+  ]
+}

@@ -1,0 +1,42 @@
+name: Phase 10 — execution parser validation
+
+on:
+  push:
+    branches:
+      - research/phase9-surface-execution
+    paths:
+      - scripts/phase10_execution_parser.py
+      - tests/test_phase10_execution_parser.py
+      - .github/workflows/phase10-execution-parser.yml
+      - docs/PHASE10_EXECUTION_DATA_PROTOCOL.md
+      - docs/PHASE10_RESULTS.md
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase10-parser:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install test dependencies
+        run: python -m pip install --disable-pip-version-check "pytest>=8,<9"
+
+      - name: Run parser unit tests
+        run: pytest -q tests/test_phase10_execution_parser.py
+
+      - name: Static smoke test
+        run: |
+          python -m py_compile scripts/phase10_execution_parser.py
+          python - <<'PY'
+          from scripts.phase10_execution_parser import VALID_ORDER_LENGTHS, VALID_TRADE_LENGTHS
+          assert 91 in VALID_ORDER_LENGTHS and 112 in VALID_ORDER_LENGTHS
+          assert 103 in VALID_TRADE_LENGTHS and 124 in VALID_TRADE_LENGTHS
+          print("Phase 10 schema smoke PASS")
+          PY

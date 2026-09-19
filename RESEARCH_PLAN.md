@@ -1,5 +1,9 @@
 # Market Inefficiency Research — Master Research Plan v1.0
 
+> **Continuity protocol:** `docs/PROJECT_CONTINUITY_MASTER.md` is the persistent cross-chat research memory. Before any new step, read it plus `STATUS.md`, this plan, the relevant phase documents, and current workflow state. After every substantive step, update the continuity master and `docs/CHAT_DECISION_LOG.md`.
+
+
+
 ## Research objective
 
 Build a reproducible research system that tests whether structural inefficiencies exist in Indian derivatives markets and whether they can survive realistic transaction costs, regime changes, multiple-testing penalties, and strict out-of-sample validation.
@@ -116,8 +120,92 @@ The full fresh-forward multimodal model achieved AUC **0.5744** for five-session
 
 Phase 8C found that surface-shape predictors remain robust under 28-path CPCV with a 30-day purge and 5-day embargo; 30D downside skew had median OOS R² **0.3166** and was positive on 100% of paths. This is predictive surface evolution, not executable P&L.
 
+### Phase 8 exit decision
+The fresh-forward tests are complete. No strategy is promoted. The price/volatility-only branch and the frozen multimodal volatility-state strategy families failed their forward/promotion gates. Phase 8C retained the surface-dynamics signal as a predictive diagnostic only.
+
 ### Next gate — execution-grade surface-relative-value validation
 Use historical bid/ask/order/trade information, leg synchronization, depth, margin and realistic transaction costs to determine whether the robust surface-dynamics signal can become an executable option strategy. No paper-trading promotion should occur before this gate passes.
+
+### Phase 9A — Execution-grade surface-relative-value validation
+**Goal:** convert the surviving surface-dynamics signal into executable, market-neutral option strategies using historical bid/ask/order-trade information and realistic costs.
+
+Status: **protocol frozen; execution-data acquisition gate remains open.**
+
+The full protocol is in docs/PHASE9A_EXECUTION_PROTOCOL.md. The candidate library remains broad by design. EOD settlement is not treated as historical bid/ask or executable fill data.
+
+### Phase 9B — Frozen surface-signal settlement-proxy validation
+**Goal:** test one mechanism-first, pre-specified translation of the strongest frozen surface predictor into a reproducible NIFTY option structure before spending effort on quote-level execution modelling.
+
+Status: **completed; rejected for promotion.**
+
+The tested rule used a same-expiry approximately 10Δ/50Δ put vertical, 45–75 days to expiry, 30-calendar-day holding period, one entry delta hedge and no overlapping positions. The model used a leakage-controlled expanding Ridge specification with the Phase 8C surface features and a 30-day future downside-skew target.
+
+Fresh forward coverage from 2026-05-15 through 2026-09-18 contained 4 non-overlapping trades and produced -₹14,828 total settlement-proxy P&L, 25% win rate and an approximate event annualized Sharpe of -0.87. The forecast itself remained predictive of future surface change (forward R² 0.3029; correlation 0.5695), so the rejection is a monetization result rather than evidence that the surface predictor disappeared.
+
+The reverse-sign result is retained as a negative control and cannot be promoted from the same four observations without post-hoc selection. The one-day-delay and random-entry controls also showed instability. Detailed results are in docs/PHASE9B_RESULTS.md.
+
+**Phase 9B decision:** REJECTED for capital trading and for paper-trading promotion. The rule is retained only as a reproducible paper-monitoring specification. The next valid research step is execution-grade historical quote/order-trade validation or a separately preregistered new monetization hypothesis; the fresh 2026 forward period must not be reused to tune a replacement strategy.
+
+### Phase 10 — Historical execution-data reconstruction
+**Goal:** normalize genuine historical NIFTY option order/trade/quote information and make point-in-time executable reconstruction possible.
+
+Status: **40% — software/schema layer implemented; external licensed data gate remains open.**
+
+The parser supports the NSE F&O historical trim and historically relevant full record sizes, preserves raw-file hashes, performs exact jiffy conversion, and rejects unsupported layouts. No bid/ask is inferred from EOD data.
+
+### Phase 11 — Executable surface strategy library
+**Goal:** represent all preregistered market-neutral surface structures with explicit legs and deterministic exposure calculations before connecting them to historical execution fills.
+
+Status: **85% — structure/exposure library complete; no economic selection performed.**
+
+The library now explicitly covers skew verticals, put/call risk reversals, put and call butterflies, iron condors, ATM calendars, skew butterflies, four-leg maturity-spread surface boxes and straddle/strangles. It also exposes a deterministic first-order underlying delta-hedge quantity for structures that require hedging. Theoretical Greeks/payoffs are diagnostics only and are never treated as historical fills.
+
+### Phase 12 — Execution simulator and cost model
+**Goal:** convert normalized historical order/trade/quote state into leg-level fills, synchronization, slippage, fees, margin and impact.
+
+Status: **80% — execution mechanics and multi-schema quote audit implemented; economic backtest remains data-blocked.**
+
+Two public NIFTY Level-2/top-of-book fixtures (TickBytes and OptionVault) are preserved only for software validation. The simulator now enforces the declared synchronization window, rejects non-finite/zero-size/crossed quotes, executes buys at ask and sells at bid, enforces displayed-size capacity, and computes quoted cash flow. The quote audit accepts both public schemas and records rejection/duplicate/spread diagnostics.
+
+The official NSE historical order/trade archive, or an equivalent licensed timestamped quote/order/trade dataset, remains the required economic-data gate.
+
+### Phase 13 — Executable CPCV/PBO/DSR validation
+**Goal:** test the full strategy library without post-hoc selection, using only executable fills, and retain complete path distributions.
+
+Status: **protocol frozen; harness implemented; economic run remains blocked by genuine historical execution data.**
+
+The preregistration will freeze the candidate set, cost grid, purge/embargo rules, selection rule, risk normalization, and promotion gates before any executable P&L is observed. The phase will not use the rejected 2026-05-15 through 2026-09-18 forward window to tune a replacement candidate.
+
+### Phase 14A — Broad inefficiency discovery and combination screening
+**Goal:** test the broader inefficiency families already identified in the research program before any parameter optimization, first as standalone mechanisms and then as preregistered equal-risk combinations.
+
+Status: **protocol frozen; data-readiness gate next.**
+
+The phase covers time-series equity effects, cross-sectional equity effects, futures basis/roll effects, option variance/jump/surface effects, index-vs-constituent dispersion/breadth, event drift/rebalancing/expiry effects, cross-market lead/lag, dependence/regime effects, and microstructure effects. The hypothesis registry is frozen in `data/phase14/inefficiency_hypothesis_registry.csv` and the detailed protocol is in `docs/PHASE14_BROAD_INEFFICIENCY_DISCOVERY.md`.
+
+Phase 14A uses the same mandatory lifecycle:
+`hypothesis -> preregistration -> data snapshot -> feature construction -> fixed baseline -> single-mechanism screen -> fixed-cost trading proxy -> leakage audit -> CPCV -> multiple-testing control -> stress tests -> untouched prospective holdout -> decision`.
+
+The discovery screen deliberately forbids lookback/threshold/holding-period/weight optimization. A mechanism must first show an economically meaningful effect under its frozen simple translation. Only then can a separately preregistered optimization phase be opened.
+
+Phase 14A.0 is the immediate gate: validate data availability and point-in-time sufficiency for every mechanism. The project must not fabricate missing quotes, infer historical bid/ask from settlement, or treat current constituent membership as historical membership.
+
+The rejected 2026-05-15 through 2026-09-18 period remains frozen and cannot be reused to select a new Phase 14A rule. A genuinely later prospective holdout will be reserved after the Phase 14A specification freeze.
+
+### Phase 15 — Untouched executable forward validation
+**Goal:** evaluate the frozen strategy specification once on an untouched later period.
+
+Status: **not started; depends on Phase 13.**
+
+### Phase 16 — Paper trading
+**Goal:** prospective implementation validation before capital.
+
+Status: **not started; only eligible after Phase 14.**
+
+### Phase 17 — Live governance
+**Goal:** monitor drift, liquidity, execution quality and retirement/revalidation triggers.
+
+Status: **not started.**
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
@@ -149,7 +237,7 @@ Each phase produces machine-readable outputs plus a human-readable report. Requi
 
 ## Current research decision
 
-The broad hypothesis remains open, but the first direct-direction predictive strategy is not supported. The current candidate fails development-period CPCV robustness despite a modest positive final-holdout settlement proxy at low assumed costs. The stronger remaining predictive target is future volatility expansion, which should now be translated into independently specified volatility-sensitive strategy families. The option-surface skew signal remains a separate branch.
+The broad hypothesis remains open. Phase 8 rejected the volatility-state directional families on fresh forward data. Phase 9B then showed that the strongest surviving surface-dynamics predictor still forecasts future surface shape, but the tested direct skew-vertical monetization failed its fresh-forward settlement-proxy gate. No NIFTY strategy is currently promoted to paper trading. The option-surface signal remains the main predictive research branch, with execution-grade data acquisition as the next mandatory gate.
 
 ## Current baseline decision
 

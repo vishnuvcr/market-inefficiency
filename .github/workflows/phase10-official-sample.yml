@@ -1,0 +1,27 @@
+name: Phase 10 — official NSE sample acquisition
+
+on:
+  push:
+    branches: [research/phase9-surface-execution]
+    paths:
+      - scripts/phase10_download_nse_sample.py
+      - .github/workflows/phase10-official-sample.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check "requests>=2.32,<3"
+      - run: python scripts/phase10_download_nse_sample.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: nse-fno-historical-sample
+          path: artifacts/nse_sample/

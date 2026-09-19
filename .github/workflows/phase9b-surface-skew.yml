@@ -1,0 +1,151 @@
+name: Phase 9B — frozen surface signal settlement-proxy validation
+
+on:
+  push:
+    branches:
+      - research/phase9-surface-execution
+    paths:
+      - scripts/phase9b_surface_skew_strategy.py
+      - .github/workflows/phase9b-surface-skew.yml
+  workflow_dispatch:
+
+concurrency:
+  group: phase9b-surface-skew
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  phase9b:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" "scikit-learn>=1.5,<2" requests openpyxl
+      - name: Resolve frozen historical Phase 4B sources
+        id: historical
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          iv_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Phase 4B — reconstruct NIFTY implied-volatility surfaces"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          und_run="$(gh run list --repo "$GITHUB_REPOSITORY"             --workflow "Acquire official NIFTY 50 underlying"             --branch research/v1.0-protocol --status success --limit 1             --json databaseId --jq '.[0].databaseId')"
+          test -n "$iv_run" -a -n "$und_run"
+          echo "iv_run=$iv_run" >> "$GITHUB_OUTPUT"
+          echo "und_run=$und_run" >> "$GITHUB_OUTPUT"
+
+      - name: Download frozen historical IV
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.historical.outputs.iv_run }}
+          pattern: phase4b-iv-surfaces-*
+          path: data/p9b/old_iv
+          merge-multiple: true
+
+      - name: Download historical NIFTY underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.historical.outputs.und_run }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/p9b/old_underlying
+          merge-multiple: true
+
+      - name: Acquire fresh official NIFTY 50 underlying
+        run: |
+          python scripts/acquire_niftyindices_nifty50.py             --start 2026-05-15             --end 2026-09-18
+
+      - name: Validate fresh underlying
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          import pandas as pd
+          root=Path("data/phase4a/external/nifty_index")
+          m=json.loads((root/"MANIFEST.json").read_text())
+          assert m["status"]=="PASS", m
+          x=pd.read_csv(root/"nifty50_ohlc.csv")
+          assert x.date.is_unique
+          assert x.close.astype(float).gt(0).all()
+          assert pd.Timestamp(x.date.min()) >= pd.Timestamp("2026-05-15")
+          print("Fresh underlying PASS", len(x), x.date.min(), x.date.max())
+          PY
+
+      - name: Acquire fresh NIFTY OPTIDX EOD
+        run: |
+          python scripts/acquire_nse_nifty_optidx.py             --start 2026-05-15             --end 2026-09-18             --workers 3             --delay-seconds 0.30
+
+      - name: Validate fresh option snapshot
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("data/nse_option_snapshot/MANIFEST.json").read_text())
+          assert m["error_days"] == 0, m
+          assert m["validated_days"] >= 60, m
+          assert m["raw_preserved"] is True
+          print("Fresh options PASS", m)
+          PY
+
+      - name: Build fresh contract master
+        run: |
+          python scripts/build_nifty_contract_master.py             --normalized-dir data/nse_option_snapshot             --output data/p9b/NIFTY_CONTRACT_MASTER.csv
+
+      - name: Acquire fresh PIT RBI risk-free curve
+        run: |
+          python scripts/acquire_rbi_tbill_risk_free.py             --start 2026-05-15             --end 2026-09-18             --decision-dates data/phase4a/external/nifty_index/nifty50_ohlc.csv             --output data/p9b/risk_free
+
+      - name: Reconstruct fresh Phase 4B IV
+        run: |
+          python scripts/reconstruct_phase4b_iv.py             --options-root data/nse_option_snapshot             --underlying data/phase4a/external/nifty_index/nifty50_ohlc.csv             --risk-free data/p9b/risk_free/rbi_risk_free_daily_curve.csv             --lot-master data/p9b/NIFTY_CONTRACT_MASTER.csv             --output data/p9b/forward_iv
+
+      - name: Validate fresh IV
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          m=json.loads(Path("data/p9b/forward_iv/PHASE4B_IV_MANIFEST.json").read_text())
+          assert m["status"]=="PASS", m
+          assert m["stats"]["iv_rows"] > 100000, m
+          assert m["surface_validation"]["unique_trade_dates"] >= 50, m
+          print("Fresh IV PASS", m["stats"], m["surface_validation"])
+          PY
+
+      - name: Run Phase 9B
+        run: |
+          OLD_IV="data/p9b/old_iv"
+          OLD_UNDERLYING="$(find data/p9b/old_underlying -type f -name nifty50_ohlc.csv -print -quit)"
+          python scripts/phase9b_surface_skew_strategy.py             --historical-iv-root "$OLD_IV"             --forward-iv-root data/p9b/forward_iv             --historical-underlying "$OLD_UNDERLYING"             --forward-underlying data/phase4a/external/nifty_index/nifty50_ohlc.csv             --cutoff 2026-05-14             --forward-start 2026-05-15             --output data/p9b/report
+
+      - name: Validate Phase 9B result
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path("data/p9b/report/PHASE9B_SURFACE_SKEW_REPORT.json").read_text())
+          assert r["status"]=="PASS", r
+          assert r["strategy"]["execution_status"].startswith("NOT_EXECUTABLE")
+          assert r["forward_strategy"]["n_trades"] >= 0
+          print(json.dumps(r, indent=2))
+          PY
+
+      - name: Upload Phase 9B artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase9b-surface-skew-${{ github.sha }}
+          path: data/p9b/report
+          if-no-files-found: error
+          retention-days: 90

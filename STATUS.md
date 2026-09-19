@@ -1,12 +1,15 @@
 # Research Status
 
+> **Continuity rule (mandatory):** Before any new research step, first read `docs/PROJECT_CONTINUITY_MASTER.md`, `STATUS.md`, `RESEARCH_PLAN.md`, the relevant phase protocol/results, and current GitHub workflow state. Update `docs/PROJECT_CONTINUITY_MASTER.md` and `docs/CHAT_DECISION_LOG.md` after every substantive step. Do not rely on model memory as project truth.
+
+
 Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 8 — Fresh-forward multimodal and volatility-surface validation**
+**Phase 12 — execution mechanics validated; economic execution-data gate remains open**
 
-Status: **PHASE 8 FULL FRESH-FORWARD TEST COMPLETED; PHASE 8B UNDERLYING-ONLY BRANCH REJECTED FOR PROMOTION; PHASE 8C SURFACE-SKEW CPCV PASSED AS A PREDICTIVE DIAGNOSTIC**
+Status: **PHASE 11 LIBRARY COMPLETE; PHASE 12 ENGINE PASS; NO EXECUTABLE STRATEGY PROMOTED**
 
 The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
@@ -22,8 +25,28 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 5. Multimodal prediction | 🟢 Completed | 100% | Direct direction rejected; volatility-expansion signal retained for further study |
 | 6. Strategy translation | 🟡 Candidate screen completed | 60% | Translate volatility-state prediction into independently validated strategy families |
 | 7. Statistical validation | 🟢 Current candidate stress-tested | 100% | Inverse-direction candidate rejected; CPCV/PBO/DSR diagnostics complete |
-| 8. Fresh-forward + execution validation | 🟡 Fresh-forward research tests completed | 60% | No strategy promoted; execution-grade surface validation is next gate |
+| 8. Fresh-forward + execution validation | 🟢 Fresh-forward research tests completed | 100% | No strategy promoted; Phase 8 exit conclusion recorded |
+| 9A. Surface-relative-value execution validation | 🟡 Protocol defined | 10% | Historical bid/ask/order-trade acquisition and executable-price reconstruction |
+| 9B. Frozen surface-signal settlement-proxy | 🟡 Completed / rejected | 70% | Direct 10Δ/50Δ skew vertical failed fresh-forward settlement-proxy gate; keep only as reproducible paper-monitoring rule |
+| 10. Historical execution-data layer | 🟡 Software-ready / data-blocked | 40% | Licensed historical order/trade/quote data required for executable fills |
+| 11. Surface strategy library | 🟢 Structure library complete | 85% | Connect explicit structures to historical execution data; no post-hoc selection |
+| 12. Execution simulator / quote audit | 🟢 Mechanically passed / economic data blocked | 80% | Multi-schema public fixtures validate execution mechanics; bulk historical archive still required |
+| 13. Executable CPCV/PBO/DSR validation | 🟡 Protocol frozen / harness added | 25% | Load genuine executable trades; then run preregistered CPCV/PBO/DSR and stress gates |
+| 14A. Broad inefficiency discovery | 🟡 Protocol frozen / standalone discovery active | 20% | Finish data-ready standalone screens; apply fixed costs/CPCV/multiple-testing before any combinations or optimization |
+| 15. Untouched executable forward | ⚪ Not started | 0% | Begins only after executable Phase 13 validation |
+| 16. Paper trading | ⚪ Not started | 0% | Begins only after untouched executable forward |
+| 17. Live governance | ⚪ Not started | 0% | Drift/revalidation automation |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
+
+## Phase 9A — execution-grade surface-relative-value validation
+
+The Phase 8 conclusion is now frozen: no NIFTY strategy is promoted; the strongest surviving predictive signal is volatility-surface shape dynamics, especially 30D downside skew. Phase 9A converts that predictive signal into a broad, pre-registered strategy library without selecting a winner from realized P&L.
+
+Protocol: `docs/PHASE9A_EXECUTION_PROTOCOL.md`.
+
+The next hard gate is historical execution data. EOD settlement/IV data will not be treated as historical bid/ask data. The execution layer requires timestamped quotes and/or order/trade observations, leg synchronization, fill reconstruction, margin inputs and realistic transaction-cost modelling. No bid/ask history will be fabricated from OHLC or settlement.
+
+The candidate library includes delta-matched skew verticals, risk reversals, butterflies, skew butterflies, calendars, four-leg surface structures, iron condors and straddle/strangle structures where their surface exposures can be explicitly mapped. Trade direction is determined from the frozen predicted surface move before realized P&L is observed.
 
 ## Validated Phase 3 snapshot
 
@@ -235,3 +258,84 @@ These are predictive diagnostics for future surface evolution, not executable op
 The direct-direction and volatility-state directional strategies have failed robustness/fresh-forward promotion gates. The reproducible remaining signal is the **option-volatility surface**, especially 30D downside skew. The next scientific gate is execution-grade surface-relative-value testing using historical bid/ask, order/trade timing, depth, leg synchronization, margin and realistic transaction costs.
 
 Detailed Phase 8 results: docs/PHASE8_RESULTS.md.
+
+
+## Phase 9B — frozen surface-signal settlement-proxy
+
+Phase 9B is complete. GitHub Actions run 35442399330 passed all acquisition, reconstruction, execution of the research script, validation and artifact-upload steps.
+
+Fresh-forward coverage is 2026-05-15 through 2026-09-18 with 135,243 valid IV observations and 88 validated option sessions. The leakage-controlled expanding Ridge forecast continued to predict the subsequent 30D downside-skew change out of sample: forward R² 0.3029 and correlation 0.5695.
+
+The direct mechanism-first strategy was a same-expiry approximately 10-delta/50-delta put vertical, entry 45–75 days to expiry, 30-calendar-day hold, one entry delta hedge, no overlapping positions, and EOD settlement proxy pricing.
+
+Fresh-forward result: 4 non-overlapping trades; −₹14,828 total settlement-proxy P&L; 25% win rate; approximate event annualized Sharpe −0.87; mean P&L / entry-risk proxy −7.9%.
+
+Therefore the direct strategy is rejected for paper-trading promotion.
+
+The reverse-direction result is retained only as a negative control. It happened to be positive on the same four forward trades, but selecting it now would be post-hoc selection. A one-day delay and random-entry controls also produced unstable results, reinforcing that the four-trade forward sample cannot be used to tune the strategy.
+
+Detailed reproducible results are in docs/PHASE9B_RESULTS.md.
+
+Usable current conclusion: the option-surface predictor remains informative about future surface shape, but Phase 9B did not establish a profitable settlement-proxy trading strategy. The reproducible rule can be used for paper monitoring only, not capital deployment. Execution-grade validation still requires historical bid/ask/order-trade data, executable multi-leg reconstruction, realistic costs and an untouched validation gate.
+
+
+## Phase 10 — historical execution-data layer
+
+The execution-data parser and protocol are now implemented and validated in CI. The parser supports the documented current FAO trim layouts and historically relevant full-layout lengths, with exact jiffy conversion and deterministic normalization. The critical external gate remains: the repository does not contain licensed historical F&O order/trade/quote files, so executable P&L cannot yet be measured.
+
+Detailed protocol/results: docs/PHASE10_EXECUTION_DATA_PROTOCOL.md and docs/PHASE10_RESULTS.md.
+
+## Phase 11 — surface strategy library
+
+The strategy structure library is now complete for the preregistered families: skew verticals, risk reversals, put/call butterflies, iron condors, ATM calendars, skew butterflies, four-leg surface boxes and straddle/strangles. Each structure has explicit legs plus deterministic theoretical exposure/payoff diagnostics. No theoretical price is used as a historical fill and no candidate is selected post-hoc.
+
+Detailed design: docs/PHASE11_EXECUTION_LIBRARY.md.
+
+
+## Phase 12 — execution simulator and quote audit
+
+Two public NIFTY Level-2/top-of-book samples are preserved as software-validation fixtures: TickBytes and OptionVault. The simulator was corrected so the declared synchronization-window argument is actually enforced. The quote audit now supports both sample schemas, counts rejection reasons, checks duplicate symbol/timestamp keys and reports spread diagnostics.
+
+These fixtures validate mechanics only; they are not a multi-month execution archive. The bulk historical order/quote/trade gate therefore remains open, and no executable trading strategy has been promoted. Detailed results: docs/PHASE12_RESULTS.md.
+
+The current strongest reproducible rule remains the frozen Phase 9B surface-monitoring specification, but its fresh settlement-proxy P&L was negative and it is not validated for capital trading.
+
+
+## Phase 13 — executable CPCV/PBO/DSR validation
+
+The preregistration is now frozen in `docs/PHASE13_EXECUTABLE_VALIDATION.md`. A trade-table validator enforces minimum executable fields, timestamp ordering, finite fill/cost values and same-candidate overlap rules before any statistical run.
+
+This is a **software/protocol gate only**. No Phase 13 profitability result is being claimed because the required bulk historical execution dataset is still absent.
+
+The current blocker is therefore concrete rather than analytical: licensed timestamped NIFTY quote/order/trade history (or equivalent) with contract identity, displayed depth/quotes, fill reconstruction inputs and PIT lot-size provenance.
+
+
+## Phase 14A — broad inefficiency discovery and combinations
+
+A new preregistered discovery branch is now frozen in `docs/PHASE14_BROAD_INEFFICIENCY_DISCOVERY.md`, with the machine-readable hypothesis registry in `data/phase14/inefficiency_hypothesis_registry.csv`.
+
+The branch deliberately comes **before optimization**. It asks two questions in order:
+
+1. Does each mechanism, alone, produce a meaningful trading effect under a fixed simple implementation and predefined costs?
+2. After the individual screen is frozen, do preregistered equal-risk combinations of distinct mechanisms add robustness without fitted weights?
+
+The first subphase is a data-readiness audit. Current official NSE sources provide historical security-wise price/volume archives for equities, contract-wise price/volume data for equity derivatives, historical index/VIX data, and current NIFTY constituent information. Historical membership/weights still require a point-in-time reconstruction rather than using the current list. citeturn647895search0turn647895search1turn647895search2turn647895search7
+
+Microstructure remains explicitly blocked for economic conclusions until genuine timestamped quote/order/trade data are available. NSE documents historical F&O order/trade data with transaction-time fields and separate historical EOD/historical data products; these are not interchangeable. citeturn524576search41turn524576search7
+
+No Phase 14A candidate may be optimized because it looks promising in the discovery screen. A candidate advances only after the frozen signal survives the project's leakage, cost, CPCV, multiple-testing, negative-control and later-holdout gates.
+
+
+
+## Continuity and current Phase 14A state
+
+The persistent continuity record is now maintained in `docs/PROJECT_CONTINUITY_MASTER.md` and `docs/CHAT_DECISION_LOG.md`.
+
+Phase 14A.1 has already produced two important discovery conclusions:
+- fixed NIFTY time-series momentum/reversal screens did not clear the robustness gate;
+- the initial short-ATM-straddle VRP screen was positive, but the IV>realized-volatility condition was effectively always active in its opportunity set, so the result is interpreted as a broad short-volatility premium observation rather than proof of a timing signal.
+
+Detailed result record: `docs/PHASE14A1_RESULTS.md`.
+
+The cross-sectional and futures workflows are still being hardened. Do not call either branch economically validated until a clean workflow and reproducible acquisition artifact are verified.
+
