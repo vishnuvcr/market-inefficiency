@@ -199,11 +199,17 @@ def expanding_predictions(s: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame
     for i in range(INITIAL_TRAIN_OBS, len(dev)):
         row = dev.iloc[i]
         pred_idx = dev.index[i]
-        train = dev.iloc[:i].dropna(subset=FEATURES + [TARGET])
+        train = dev.iloc[:i].copy()
+        train = train[train.date <= row.date - pd.Timedelta(days=HOLD_DAYS)]
+        train = train.dropna(subset=FEATURES + [TARGET])
         pred[pred_idx] = ridge_fit_predict(train, row)
 
     # Forward: one frozen fit using the entire development set.
-    frozen_train = dev.dropna(subset=FEATURES + [TARGET])
+    # Only labels whose full 30-day outcome was observable by the cutoff
+    # can be used for the frozen forward model.
+    frozen_train = dev[
+        dev.date <= cutoff - pd.Timedelta(days=HOLD_DAYS)
+    ].dropna(subset=FEATURES + [TARGET])
     for idx in out.index[out.date > cutoff]:
         row = out.loc[idx]
         pred[idx] = ridge_fit_predict(frozen_train, row)
@@ -408,6 +414,43 @@ def cost_sensitivity(trades: pd.DataFrame) -> dict:
     return out
 
 
+
+def transformed_signal(signals: pd.DataFrame, mode: str, seed: int = 20260919) -> pd.DataFrame:
+    """Create preregistered negative controls without changing trade mechanics."""
+    x = signals.copy()
+    if mode == "primary":
+        return x
+    active = x.prediction.notna()
+    if mode == "sign_flip":
+        x.loc[active, "prediction"] = -x.loc[active, "prediction"]
+    elif mode == "one_day_delay":
+        x["prediction"] = x.prediction.shift(1)
+    elif mode == "random_sign":
+        rng = np.random.default_rng(seed)
+        vals = x.loc[active, "prediction"].to_numpy(float)
+        signs = np.where(rng.random(len(vals)) < 0.5, -1.0, 1.0)
+        x.loc[active, "prediction"] = np.abs(vals) * signs
+    elif mode == "random_entry":
+        rng = np.random.default_rng(seed)
+        p = float(active.mean())
+        take = rng.random(len(x)) < p
+        x["prediction"] = np.where(take, 1.0, np.nan)
+    else:
+        raise ValueError(f"Unknown control mode: {mode}")
+    x["signal"] = np.where(
+        x.prediction.gt(0), 1, np.where(x.prediction.lt(0), -1, 0)
+    )
+    return x
+
+
+def run_controls(signals: pd.DataFrame, options: pd.DataFrame) -> dict:
+    out = {}
+    for mode in ("primary", "sign_flip", "one_day_delay", "random_sign", "random_entry"):
+        t = simulate(transformed_signal(signals, mode), options)
+        out[mode] = summarize(t)
+    return out
+
+
 def summarize(trades: pd.DataFrame) -> dict:
     if trades.empty:
         return {"n": 0}
@@ -504,6 +547,12 @@ def main() -> None:
         },
         "development_strategy": summarize(dev_trades),
         "forward_strategy": summarize(fwd_trades),
+        "negative_controls": {
+            "development": run_controls(dev, hist_iv),
+            "forward": run_controls(forward, fwd_iv),
+            "purpose": "sanity checks only; controls are not candidate-selection variants",
+            "random_seed": 20260919
+        },
         "forward_forecast": {
             "rows": int(forward.prediction.notna().sum()),
             "target_rows": int(forward[TARGET].notna().sum()),
