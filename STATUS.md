@@ -1,5 +1,8 @@
 # Research Status
 
+> **Continuity rule (mandatory):** Before any new research step, first read `docs/PROJECT_CONTINUITY_MASTER.md`, `STATUS.md`, `RESEARCH_PLAN.md`, the relevant phase protocol/results, and current GitHub workflow state. Update `docs/PROJECT_CONTINUITY_MASTER.md` and `docs/CHAT_DECISION_LOG.md` after every substantive step. Do not rely on model memory as project truth.
+
+
 Last updated: 2026-09-19
 
 ## Overall phase
@@ -29,7 +32,7 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 11. Surface strategy library | 🟢 Structure library complete | 85% | Connect explicit structures to historical execution data; no post-hoc selection |
 | 12. Execution simulator / quote audit | 🟢 Mechanically passed / economic data blocked | 80% | Multi-schema public fixtures validate execution mechanics; bulk historical archive still required |
 | 13. Executable CPCV/PBO/DSR validation | 🟡 Protocol frozen / harness added | 25% | Load genuine executable trades; then run preregistered CPCV/PBO/DSR and stress gates |
-| 14A. Broad inefficiency discovery | 🟡 Protocol frozen / data-readiness next | 10% | Audit all listed mechanisms; run standalone screens first, then preregistered equal-risk combinations |
+| 14A. Broad inefficiency discovery | 🟡 Protocol frozen / standalone discovery active | 20% | Finish data-ready standalone screens; apply fixed costs/CPCV/multiple-testing before any combinations or optimization |
 | 15. Untouched executable forward | ⚪ Not started | 0% | Begins only after executable Phase 13 validation |
 | 16. Paper trading | ⚪ Not started | 0% | Begins only after untouched executable forward |
 | 17. Live governance | ⚪ Not started | 0% | Drift/revalidation automation |
@@ -321,4 +324,18 @@ The first subphase is a data-readiness audit. Current official NSE sources provi
 Microstructure remains explicitly blocked for economic conclusions until genuine timestamped quote/order/trade data are available. NSE documents historical F&O order/trade data with transaction-time fields and separate historical EOD/historical data products; these are not interchangeable. citeturn524576search41turn524576search7
 
 No Phase 14A candidate may be optimized because it looks promising in the discovery screen. A candidate advances only after the frozen signal survives the project's leakage, cost, CPCV, multiple-testing, negative-control and later-holdout gates.
+
+
+
+## Continuity and current Phase 14A state
+
+The persistent continuity record is now maintained in `docs/PROJECT_CONTINUITY_MASTER.md` and `docs/CHAT_DECISION_LOG.md`.
+
+Phase 14A.1 has already produced two important discovery conclusions:
+- fixed NIFTY time-series momentum/reversal screens did not clear the robustness gate;
+- the initial short-ATM-straddle VRP screen was positive, but the IV>realized-volatility condition was effectively always active in its opportunity set, so the result is interpreted as a broad short-volatility premium observation rather than proof of a timing signal.
+
+Detailed result record: `docs/PHASE14A1_RESULTS.md`.
+
+The cross-sectional and futures workflows are still being hardened. Do not call either branch economically validated until a clean workflow and reproducible acquisition artifact are verified.
 
