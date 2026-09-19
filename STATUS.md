@@ -4,9 +4,9 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 9B — Surface-signal settlement-proxy validation completed; execution-grade gate remains open**
+**Phase 11 — strategy library implemented; execution-data gate remains open**
 
-Status: **PHASE 9B COMPLETED; DIRECT STRATEGY REJECTED FOR PROMOTION; EXECUTION DATA STILL REQUIRED**
+Status: **PHASE 10 SOFTWARE-READY; PHASE 11 LIBRARY IMPLEMENTED; NO EXECUTABLE STRATEGY PROMOTED**
 
 The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
@@ -25,6 +25,8 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 8. Fresh-forward + execution validation | 🟢 Fresh-forward research tests completed | 100% | No strategy promoted; Phase 8 exit conclusion recorded |
 | 9A. Surface-relative-value execution validation | 🟡 Protocol defined | 10% | Historical bid/ask/order-trade acquisition and executable-price reconstruction |
 | 9B. Frozen surface-signal settlement-proxy | 🟡 Completed / rejected | 70% | Direct 10Δ/50Δ skew vertical failed fresh-forward settlement-proxy gate; keep only as reproducible paper-monitoring rule |
+| 10. Historical execution-data layer | 🟡 Software-ready / data-blocked | 40% | Licensed historical order/trade/quote data required for executable fills |
+| 11. Surface strategy library | 🟡 Implemented / untested economically | 50% | Broad leg/exposure library ready; no strategy selection before execution data |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Phase 9A — execution-grade surface-relative-value validation
@@ -266,3 +268,16 @@ The reverse-direction result is retained only as a negative control. It happened
 Detailed reproducible results are in docs/PHASE9B_RESULTS.md.
 
 Usable current conclusion: the option-surface predictor remains informative about future surface shape, but Phase 9B did not establish a profitable settlement-proxy trading strategy. The reproducible rule can be used for paper monitoring only, not capital deployment. Execution-grade validation still requires historical bid/ask/order-trade data, executable multi-leg reconstruction, realistic costs and an untouched validation gate.
+
+
+## Phase 10 — historical execution-data layer
+
+The execution-data parser and protocol are now implemented and validated in CI. The parser supports the documented current FAO trim layouts and historically relevant full-layout lengths, with exact jiffy conversion and deterministic normalization. The critical external gate remains: the repository does not contain licensed historical F&O order/trade/quote files, so executable P&L cannot yet be measured.
+
+Detailed protocol/results: docs/PHASE10_EXECUTION_DATA_PROTOCOL.md and docs/PHASE10_RESULTS.md.
+
+## Phase 11 — surface strategy library
+
+A broad strategy/exposure library is implemented for skew verticals, risk reversals, butterflies, iron condors and reserved additional surface structures. It computes deterministic theoretical exposure diagnostics and terminal payoffs only. It does not rank structures or use theoretical prices as historical fills.
+
+Detailed design: docs/PHASE11_EXECUTION_LIBRARY.md.
