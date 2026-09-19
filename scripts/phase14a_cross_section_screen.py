@@ -45,6 +45,8 @@ def cpcv(values: np.ndarray) -> np.ndarray:
         s = sharpe(x)
         if s is not None:
             out.append(s)
+    if not out:
+        return np.asarray([np.nan], dtype=float)
     return np.asarray(out, dtype=float)
 
 
