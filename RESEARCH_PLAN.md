@@ -116,8 +116,18 @@ The full fresh-forward multimodal model achieved AUC **0.5744** for five-session
 
 Phase 8C found that surface-shape predictors remain robust under 28-path CPCV with a 30-day purge and 5-day embargo; 30D downside skew had median OOS R² **0.3166** and was positive on 100% of paths. This is predictive surface evolution, not executable P&L.
 
+### Phase 8 exit decision
+The fresh-forward tests are complete. No strategy is promoted. The price/volatility-only branch and the frozen multimodal volatility-state strategy families failed their forward/promotion gates. Phase 8C retained the surface-dynamics signal as a predictive diagnostic only.
+
 ### Next gate — execution-grade surface-relative-value validation
 Use historical bid/ask/order/trade information, leg synchronization, depth, margin and realistic transaction costs to determine whether the robust surface-dynamics signal can become an executable option strategy. No paper-trading promotion should occur before this gate passes.
+
+### Phase 9A — Execution-grade surface-relative-value validation
+**Goal:** convert the surviving surface-dynamics signal into executable, market-neutral option strategies using historical bid/ask/order-trade information and realistic costs.
+
+Status: **10% — protocol frozen; execution-data acquisition gate open.**
+
+The full protocol is in `docs/PHASE9A_EXECUTION_PROTOCOL.md`. The next gate is data availability and PIT validation for historical execution information. Candidate strategy families are broad by design; no single structure is preselected as the winner.
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
