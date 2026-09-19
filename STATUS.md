@@ -4,9 +4,9 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 8 — Fresh-forward multimodal and volatility-surface validation**
+**Phase 9A — Execution-grade surface-relative-value validation**
 
-Status: **PHASE 8 FULL FRESH-FORWARD TEST COMPLETED; PHASE 8B UNDERLYING-ONLY BRANCH REJECTED FOR PROMOTION; PHASE 8C SURFACE-SKEW CPCV PASSED AS A PREDICTIVE DIAGNOSTIC**
+Status: **PROTOCOL DEFINED; EXECUTION-DATA ACQUISITION GATE OPEN**
 
 The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
@@ -22,8 +22,19 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 5. Multimodal prediction | 🟢 Completed | 100% | Direct direction rejected; volatility-expansion signal retained for further study |
 | 6. Strategy translation | 🟡 Candidate screen completed | 60% | Translate volatility-state prediction into independently validated strategy families |
 | 7. Statistical validation | 🟢 Current candidate stress-tested | 100% | Inverse-direction candidate rejected; CPCV/PBO/DSR diagnostics complete |
-| 8. Fresh-forward + execution validation | 🟡 Fresh-forward research tests completed | 60% | No strategy promoted; execution-grade surface validation is next gate |
+| 8. Fresh-forward + execution validation | 🟢 Fresh-forward research tests completed | 100% | No strategy promoted; Phase 8 exit conclusion recorded |
+| 9A. Surface-relative-value execution validation | 🟡 Protocol defined | 10% | Historical bid/ask/order-trade acquisition and executable-price reconstruction |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
+
+## Phase 9A — execution-grade surface-relative-value validation
+
+The Phase 8 conclusion is now frozen: no NIFTY strategy is promoted; the strongest surviving predictive signal is volatility-surface shape dynamics, especially 30D downside skew. Phase 9A converts that predictive signal into a broad, pre-registered strategy library without selecting a winner from realized P&L.
+
+Protocol: `docs/PHASE9A_EXECUTION_PROTOCOL.md`.
+
+The next hard gate is historical execution data. EOD settlement/IV data will not be treated as historical bid/ask data. The execution layer requires timestamped quotes and/or order/trade observations, leg synchronization, fill reconstruction, margin inputs and realistic transaction-cost modelling. No bid/ask history will be fabricated from OHLC or settlement.
+
+The candidate library includes delta-matched skew verticals, risk reversals, butterflies, skew butterflies, calendars, four-leg surface structures, iron condors and straddle/strangle structures where their surface exposures can be explicitly mapped. Trade direction is determined from the frozen predicted surface move before realized P&L is observed.
 
 ## Validated Phase 3 snapshot
 
