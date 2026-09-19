@@ -32,7 +32,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" "scikit-learn>=1.5,<2" requests
+          python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scipy>=1.13,<2" "scikit-learn>=1.5,<2" requests openpyxl
       - name: Resolve frozen historical Phase 4B sources
         id: historical
         env:
