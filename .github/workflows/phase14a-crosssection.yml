@@ -12,6 +12,8 @@ on:
 
 jobs:
   screen:
+    env:
+      PYTHONPATH: .
     runs-on: ubuntu-latest
     timeout-minutes: 50
     steps:
