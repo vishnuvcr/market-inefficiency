@@ -28,6 +28,7 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 10. Historical execution-data layer | 🟡 Software-ready / data-blocked | 40% | Licensed historical order/trade/quote data required for executable fills |
 | 11. Surface strategy library | 🟢 Structure library complete | 85% | Connect explicit structures to historical execution data; no post-hoc selection |
 | 12. Execution simulator / quote audit | 🟢 Mechanically passed / economic data blocked | 80% | Multi-schema public fixtures validate execution mechanics; bulk historical archive still required |
+| 13. Executable CPCV/PBO/DSR validation | ⚪ Protocol frozen / harness added | 15% | Load genuine executable trades; then run preregistered CPCV/PBO/DSR and stress gates |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Phase 9A — execution-grade surface-relative-value validation
@@ -291,3 +292,12 @@ Two public NIFTY Level-2/top-of-book samples are preserved as software-validatio
 These fixtures validate mechanics only; they are not a multi-month execution archive. The bulk historical order/quote/trade gate therefore remains open, and no executable trading strategy has been promoted. Detailed results: docs/PHASE12_RESULTS.md.
 
 The current strongest reproducible rule remains the frozen Phase 9B surface-monitoring specification, but its fresh settlement-proxy P&L was negative and it is not validated for capital trading.
+
+
+## Phase 13 — executable CPCV/PBO/DSR validation
+
+The preregistration is now frozen in `docs/PHASE13_EXECUTABLE_VALIDATION.md`. A trade-table validator enforces minimum executable fields, timestamp ordering, finite fill/cost values and same-candidate overlap rules before any statistical run.
+
+This is a **software/protocol gate only**. No Phase 13 profitability result is being claimed because the required bulk historical execution dataset is still absent.
+
+The current blocker is therefore concrete rather than analytical: licensed timestamped NIFTY quote/order/trade history (or equivalent) with contract identity, displayed depth/quotes, fill reconstruction inputs and PIT lot-size provenance.
