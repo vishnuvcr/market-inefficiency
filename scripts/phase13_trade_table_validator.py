@@ -14,10 +14,22 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 REQUIRED = {
-    "candidate", "decision_time", "entry_time", "exit_time",
-    "contract_id", "side", "quantity", "entry_fill", "exit_fill",
-    "gross_pnl", "fees", "taxes", "net_pnl", "capital_at_risk",
+    "candidate",
+    "decision_time",
+    "entry_time",
+    "exit_time",
+    "contract_id",
+    "side",
+    "quantity",
+    "entry_fill",
+    "exit_fill",
+    "gross_pnl",
+    "fees",
+    "taxes",
+    "net_pnl",
+    "capital_at_risk",
 }
+
 
 def parse_time(value: str) -> datetime:
     raw = value.strip().replace("Z", "+00:00")
@@ -26,26 +38,29 @@ def parse_time(value: str) -> datetime:
         ts = ts.replace(tzinfo=timezone.utc)
     return ts.astimezone(timezone.utc)
 
+
 def finite_positive(value: str, name: str) -> float:
     x = float(value)
     if not math.isfinite(x) or x <= 0:
         raise ValueError(f"{name} must be finite and > 0")
     return x
 
+
 def validate(path: Path) -> dict:
     errors: list[str] = []
     rows = 0
-    overlaps = 0
-    last_by_candidate: dict[str, datetime] = {}
+    intervals_by_candidate: dict[str, list[tuple[datetime, datetime]]] = {}
 
     with path.open(newline="", encoding="utf-8") as fh:
         reader = csv.DictReader(fh)
         fields = set(reader.fieldnames or [])
         missing = sorted(REQUIRED - fields)
         if missing:
-            errors.append("missing_columns:" + ",".join(missing))
-        if errors:
-            return {"status": "FAIL", "rows": 0, "errors": errors}
+            return {
+                "status": "FAIL",
+                "rows": 0,
+                "errors": ["missing_columns:" + ",".join(missing)],
+            }
 
         for line_no, row in enumerate(reader, start=2):
             rows += 1
@@ -69,21 +84,29 @@ def validate(path: Path) -> dict:
                     x = float(row[name])
                     if not math.isfinite(x):
                         raise ValueError(f"{name} must be finite")
-                prev_exit = last_by_candidate.get(candidate)
-                if prev_exit is not None and entry < prev_exit:
-                    overlaps += 1
-                last_by_candidate[candidate] = max(exit_, prev_exit or exit_)
+                intervals_by_candidate.setdefault(candidate, []).append((entry, exit_))
             except Exception as exc:
                 errors.append(f"line {line_no}: {exc}")
+
+    overlaps = 0
+    for intervals in intervals_by_candidate.values():
+        intervals.sort()
+        prior_end = None
+        for start, end in intervals:
+            if prior_end is not None and start < prior_end:
+                overlaps += 1
+            if prior_end is None or end > prior_end:
+                prior_end = end
 
     status = "PASS" if rows > 0 and not errors and overlaps == 0 else "FAIL"
     return {
         "status": status,
         "rows": rows,
+        "candidate_count": len(intervals_by_candidate),
         "overlapping_same_candidate_rows": overlaps,
         "errors_sample": errors[:25],
-        "candidate_count": len(last_by_candidate),
     }
+
 
 def main() -> None:
     ap = argparse.ArgumentParser()
@@ -98,5 +121,6 @@ def main() -> None:
     if result["status"] != "PASS":
         raise SystemExit(2)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     main()
