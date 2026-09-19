@@ -1,4 +1,4 @@
-# Phase 14 — Broad Inefficiency Discovery and Combination Screening
+# Phase 14A — Broad Inefficiency Discovery and Combination Screening
 
 ## Objective
 
@@ -24,7 +24,7 @@ A family is **not considered testable** merely because a data source exists. The
 
 ## Frozen methodology
 
-Every Phase 14 experiment follows:
+Every Phase 14A experiment follows:
 
 `hypothesis -> preregistration -> data snapshot -> feature construction -> fixed baseline -> single-mechanism screen -> fixed-cost trading proxy -> leakage audit -> CPCV -> multiple-testing control -> stress tests -> untouched prospective holdout -> decision`
 
@@ -40,9 +40,9 @@ The project-wide rules remain unchanged:
 - All data snapshots are hashed and point-in-time availability is recorded.
 - Every retained mechanism must survive the same leakage, cost, CPCV, PBO/DSR and forward-validation gates used elsewhere in the project.
 
-## Phase 14 subphases
+## Phase 14A subphases
 
-### 14.0 Governance and data-readiness freeze
+### 14A.0 Governance and data-readiness freeze
 
 Produce the machine-readable hypothesis registry and data sufficiency matrix.
 
@@ -62,7 +62,7 @@ For each hypothesis record:
 
 Exit: no family enters the screen without a complete preregistration and a declared data-quality gate.
 
-### 14.1 Single-mechanism discovery screen
+### 14A.1 Single-mechanism discovery screen
 
 For each data-ready mechanism, run a deliberately simple, fixed trading translation.
 
@@ -89,7 +89,7 @@ The screen records:
 
 The purpose is **existence detection**, not maximizing performance.
 
-### 14.2 Combination screen
+### 14A.2 Combination screen
 
 Only after the single-mechanism registry is frozen, test combinations.
 
@@ -107,7 +107,7 @@ Initial bundles:
 
 A combination is not allowed to rescue a mechanism by changing its sign after observing results. Component signs remain those preregistered in the component hypothesis.
 
-### 14.3 Statistical validation
+### 14A.3 Statistical validation
 
 For every single mechanism and every preregistered combination:
 
@@ -122,18 +122,18 @@ For every single mechanism and every preregistered combination:
 
 A family that is statistically significant but economically eliminated by modest predefined costs is classified as **statistically present / not economically usable**, not as a tradable inefficiency.
 
-### 14.4 Prospective holdout
+### 14A.4 Prospective holdout
 
-The next genuinely later observations after the Phase 14 specification freeze will be reserved as an untouched prospective holdout.
+The next genuinely later observations after the Phase 14A specification freeze will be reserved as an untouched prospective holdout.
 
-The already-used **2026-05-15 through 2026-09-18** period is permanently frozen and cannot become the Phase 14 tuning or selection sample.
+The already-used **2026-05-15 through 2026-09-18** period is permanently frozen and cannot become the Phase 14A tuning or selection sample.
 
 Until a later untouched period exists, a discovery result can be classified as:
 - `DISCOVERY_POSITIVE` — historical evidence only;
 - `ECONOMIC_CANDIDATE` — historical net evidence survives all discovery gates;
 - `VALIDATED` — only after the untouched later holdout also passes.
 
-### 14.5 Decision taxonomy
+### 14A.5 Decision taxonomy
 
 Each mechanism receives one of:
 
@@ -146,7 +146,7 @@ Each mechanism receives one of:
 - `ECONOMIC_CANDIDATE`
 - `VALIDATED`
 
-No ranking, winner selection or optimization occurs in Phase 14.
+No ranking, winner selection or optimization occurs in Phase 14A.
 
 ## Data sufficiency rules
 
@@ -166,7 +166,7 @@ No ranking, winner selection or optimization occurs in Phase 14.
 - Intraday reversal/overnight effects require timestamped intraday data.
 - Microstructure tests require genuine quote/order/trade history and cannot use settlement proxies.
 
-## Promotion gate for Phase 14
+## Promotion gate for Phase 14A
 
 A mechanism or combination may advance to optimization only when all are true:
 
@@ -181,10 +181,10 @@ A mechanism or combination may advance to optimization only when all are true:
 
 ## Relationship to existing phases
 
-Phase 14 does **not** replace Phase 13. Phase 13 remains the execution-grade statistical validation gate for the option-surface strategy library once genuine historical executable data are available.
+Phase 14A does **not** replace Phase 13. Phase 13 remains the execution-grade statistical validation gate for the option-surface strategy library once genuine historical executable data are available.
 
-Phase 14 is the broader discovery branch. Any Phase 14 candidate that depends on executable quotes/order/trades must ultimately pass the same Phase 10–13 execution-data and statistical gates before paper trading.
+Phase 14A is the broader discovery branch. Any Phase 14A candidate that depends on executable quotes/order/trades must ultimately pass the same Phase 10–13 execution-data and statistical gates before paper trading.
 
 ## Immediate next action
 
-Execute **14.0**, then run all `DATA_READY` single-mechanism screens before any optimization. No candidate gets tuned merely because an early screen is attractive.
+Execute **14A.0**, then run all `DATA_READY` single-mechanism screens before any optimization. No candidate gets tuned merely because an early screen is attractive.
