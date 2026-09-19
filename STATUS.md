@@ -21,8 +21,8 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 4. Option-market hypotheses | 🟢 Formal PIT/IV + VRP + H-A2/H-B1/H-C1 gates passed | 85% | Economic/execution validation and multiplicity controls |
 | 5. Multimodal prediction | 🟢 Completed | 100% | Direct direction rejected; volatility-expansion signal retained for further study |
 | 6. Strategy translation | 🟡 Candidate screen completed | 60% | Translate volatility-state prediction into independently validated strategy families |
-| 7. Statistical validation | 🟢 Current candidate stress-tested | 70% | Current inverse-direction candidate rejected for promotion; next branch must be re-specified |
-| 8. Paper trading / execution validation | ⚪ Not started | 0% | Requires execution-grade historical quote/order/trade validation |
+| 7. Statistical validation | 🟢 Current candidate stress-tested | 100% | Inverse-direction candidate rejected; CPCV/PBO/DSR diagnostics complete |
+| 8. Fresh-forward + execution validation | 🟡 Fresh-forward research tests completed | 60% | No strategy promoted; execution-grade surface validation is next gate |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Validated Phase 3 snapshot
@@ -208,3 +208,30 @@ CPCV over the first 90% produced **28 paths**. For the frozen inverse-direction 
 The research direction is now clear: do not spend further effort optimizing this inverse-direction strategy. The next independent branch should exploit the stronger **volatility-expansion prediction** and test strategy families conditionally on predicted volatility state. Option-surface skew remains a parallel predictive branch, but executable options claims still require quote/order-trade data.
 
 See docs/PHASE5_RESULTS.md, docs/PHASE6_RESULTS.md, and docs/PHASE7_RESULTS.md.
+
+
+## Phase 8 — fresh-forward validation
+
+The frozen Phase 5 multimodal specification was tested on a genuinely later period, **2026-05-15 through 2026-09-17**, with fresh NIFTY underlying and fresh option-surface data. Development contained 1,449 observations through 2026-05-14; the fresh forward evaluation contained 87 observations.
+
+Fresh-forward five-session volatility-expansion AUC was **0.5744**. None of the six preregistered volatility-conditioned NIFTY strategy families passed the 20-bps promotion gate. At 20 bps, forward Sharpe values ranged from **-3.08 to +0.16**, and every development CPCV median Sharpe was negative.
+
+Phase 8B independently tested the same idea using only price/volatility features. It also failed promotion, confirming that the stronger historical multimodal result does not generalize as a generic underlying-only effect.
+
+## Phase 8C — volatility-surface dynamics CPCV
+
+A 28-path CPCV with a 30-calendar-day purge and 5-day embargo strengthened the H-C1 surface-dynamics finding:
+
+- 30D downside skew: median OOS R² **0.3166**, positive on **100%** of paths.
+- 30D upside skew: median OOS R² **0.1068**, positive on **89.3%** of paths.
+- 30–60D term slope: median OOS R² **0.1543**, positive on **96.4%** of paths.
+
+These are predictive diagnostics for future surface evolution, not executable option-strategy returns.
+
+## Current research decision
+
+**No current NIFTY strategy is promoted to paper trading.**
+
+The direct-direction and volatility-state directional strategies have failed robustness/fresh-forward promotion gates. The reproducible remaining signal is the **option-volatility surface**, especially 30D downside skew. The next scientific gate is execution-grade surface-relative-value testing using historical bid/ask, order/trade timing, depth, leg synchronization, margin and realistic transaction costs.
+
+Detailed Phase 8 results: docs/PHASE8_RESULTS.md.
