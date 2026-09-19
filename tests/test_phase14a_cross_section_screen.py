@@ -3,7 +3,7 @@ from scripts.phase14a_cross_section_screen import main
 
 def test_cross_section_screen_smoke(tmp_path, monkeypatch):
     rows=[]
-    dates=pd.date_range('2020-01-01',periods=35,freq='B')
+    dates=pd.date_range('2020-01-01',periods=120,freq='B')
     for d in dates:
         for i in range(50):
             px=100+i*0.01+len(rows)*0.001
