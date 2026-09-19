@@ -47,7 +47,7 @@ def test_cpcv_produces_expected_path_count():
 def test_pbo_and_dsr_are_finite_diagnostics():
     events = make_events()
     paths = cpcv(events, n_groups=6, n_test_groups=2, purge_days=0, embargo_days=0)
-    pbo = pbo_from_paths(events, paths, n_groups=6, n_test_groups=2)
+    pbo = pbo_from_paths(events, paths, n_groups=6, n_test_groups=2, purge_days=0, embargo_days=0)
     dsr = approximate_dsr([e.return_on_risk for e in events if e.candidate == "A"], n_trials=3)
     assert pbo is not None
     assert 0 <= pbo <= 1
