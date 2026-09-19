@@ -81,3 +81,20 @@ Before any future step:
 
 ## 14.0 — Commit both continuity files
 
+
+
+## 2026-09-19 — Persistent continuity system created
+
+Repository files committed:
+- `docs/PROJECT_CONTINUITY_MASTER.md`
+- `docs/CHAT_DECISION_LOG.md`
+- `STATUS.md` updated with the mandatory read-before-step rule.
+- `RESEARCH_PLAN.md` updated with the same continuity rule.
+
+Continuity policy now:
+- The repository is the primary cross-chat project memory.
+- Every substantive research step must begin by reading the continuity master, status, plan, relevant phase documents and current workflow state.
+- Every substantive step must end by updating the continuity master and chat/decision log.
+- No new optimization or strategy-selection work may proceed unless it is consistent with the frozen methodology recorded there.
+
+This entry also records that the repository intentionally stores decision rationale and evidence, rather than hidden private chain-of-thought.
