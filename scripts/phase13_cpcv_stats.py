@@ -52,13 +52,16 @@ def event_sharpe(values: list[float]) -> float | None:
     return mean / math.sqrt(var)
 
 
-def _partitions(times: list[datetime], n_groups: int) -> list[int]:
-    if n_groups < 2 or len(times) < n_groups:
-        raise ValueError("not enough event dates for requested groups")
-    out = []
-    for i in range(len(times)):
-        out.append(min(n_groups - 1, i * n_groups // len(times)))
-    return out
+def _group_assignments(events: list[TradeEvent], n_groups: int) -> list[int]:
+    """Assign all events sharing a decision date to the same contiguous group."""
+    unique_dates = sorted({e.decision_time.date() for e in events})
+    if n_groups < 2 or len(unique_dates) < n_groups:
+        raise ValueError("not enough unique decision dates for requested groups")
+    date_group = {
+        d: min(n_groups - 1, i * n_groups // len(unique_dates))
+        for i, d in enumerate(unique_dates)
+    }
+    return [date_group[e.decision_time.date()] for e in events]
 
 
 def purged_train_indices(
@@ -100,8 +103,7 @@ def cpcv(
         raise ValueError("n_test_groups must be between 1 and n_groups-1")
 
     events = sorted(events, key=lambda x: (x.decision_time, x.entry_time, x.candidate))
-    dates = [x.decision_time for x in events]
-    groups = _partitions(dates, n_groups)
+    groups = _group_assignments(events, n_groups)
     paths = []
 
     for path_id, test_groups in enumerate(combinations(range(n_groups), n_test_groups)):
@@ -133,20 +135,26 @@ def cpcv(
     return paths
 
 
-def pbo_from_paths(events: list[TradeEvent], paths: list[CPCVPath], n_groups: int, n_test_groups: int) -> float | None:
+def pbo_from_paths(
+    events: list[TradeEvent],
+    paths: list[CPCVPath],
+    n_groups: int,
+    n_test_groups: int,
+    purge_days: int = 30,
+    embargo_days: int = 5,
+) -> float | None:
     if len(paths) == 0:
         return None
 
     events = sorted(events, key=lambda x: (x.decision_time, x.entry_time, x.candidate))
-    dates = [x.decision_time for x in events]
-    groups = _partitions(dates, n_groups)
+    groups = _group_assignments(events, n_groups)
     all_candidates = sorted({e.candidate for e in events})
     negative_logit = 0
     usable = 0
 
     for path in paths:
         test_idx = {i for i, g in enumerate(groups) if g in path.test_groups}
-        train_idx = purged_train_indices(events, test_idx, 30, 5)
+        train_idx = purged_train_indices(events, test_idx, purge_days, embargo_days)
         train = {}
         test = {}
         for candidate in all_candidates:
