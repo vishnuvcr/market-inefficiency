@@ -29,6 +29,7 @@ from pathlib import Path
 import numpy as np
 import pandas as pd
 from scipy.stats import norm
+from sklearn.impute import SimpleImputer
 
 
 FEATURES = [
@@ -174,16 +175,19 @@ def build_surface(iv: pd.DataFrame, underlying: pd.DataFrame) -> pd.DataFrame:
 def ridge_fit_predict(train: pd.DataFrame, row: pd.Series) -> float:
     x = train[FEATURES].to_numpy(float)
     y = train[TARGET].to_numpy(float)
-    keep = np.isfinite(x).all(axis=1) & np.isfinite(y)
+    keep = np.isfinite(y) & (np.isfinite(x).any(axis=1))
     x, y = x[keep], y[keep]
-    if len(y) < MIN_TRAIN or not np.isfinite(row[FEATURES].to_numpy(float)).all():
+    if len(y) < MIN_TRAIN:
         return float("nan")
+    imp = SimpleImputer(strategy="median")
+    x = imp.fit_transform(x)
+    row_x = imp.transform(row[FEATURES].to_numpy(float).reshape(1, -1))[0]
     mu = x.mean(axis=0)
     sd = x.std(axis=0, ddof=0)
     sd[sd == 0] = 1.0
     z = (x - mu) / sd
     beta = np.linalg.solve(z.T @ z + ALPHA * np.eye(z.shape[1]), z.T @ y)
-    return float(((row[FEATURES].to_numpy(float) - mu) / sd) @ beta + y.mean())
+    return float(((row_x - mu) / sd) @ beta + y.mean())
 
 
 def expanding_predictions(s: pd.DataFrame, cutoff: pd.Timestamp) -> pd.DataFrame:
@@ -339,8 +343,9 @@ def simulate(
         if sign > 0:
             risk_per_unit = max(k_near - k_far - credit, 0.0)
         else:
-            debit_per_unit = max(-credit, 0.0)
-            risk_per_unit = debit_per_unit
+            # Reverse the credit spread: long the near-ATM put and short the
+            # far OTM put. Initial debit is the absolute spread value.
+            risk_per_unit = max(credit, 0.0)
         risk_rupees = risk_per_unit * lot
 
         trades.append(
@@ -445,7 +450,10 @@ def main() -> None:
     fwd_u = pd.read_csv(args.forward_underlying)
 
     hist = build_surface(hist_iv, hist_u)
-    fwd = build_surface(fwd_iv, fwd_u)
+    # Preserve the historical lookback for forward-only underlying controls.
+    # Forward surface observations themselves use only forward option data.
+    fwd = build_surface(fwd_iv, pd.concat([hist_u, fwd_u], ignore_index=True))
+    fwd = fwd[fwd.date >= forward_start].copy()
 
     # Development model/signal is generated without any observation after cutoff.
     combined = pd.concat([hist, fwd], ignore_index=True).drop_duplicates("date").sort_values("date")
@@ -496,6 +504,12 @@ def main() -> None:
         },
         "development_strategy": summarize(dev_trades),
         "forward_strategy": summarize(fwd_trades),
+        "forward_forecast": {
+            "rows": int(forward.prediction.notna().sum()),
+            "target_rows": int(forward[TARGET].notna().sum()),
+            "r2_vs_realized_surface_change": None,
+            "correlation_vs_realized_surface_change": None,
+        },
         "forward_cost_stress": cost_sensitivity(fwd_trades),
         "decision": {
             "paper_candidate_gate": (
@@ -508,6 +522,18 @@ def main() -> None:
     }
 
     q = dev.dropna(subset=["prediction", TARGET])
+    qf = forward.dropna(subset=["prediction", TARGET])
+    if len(qf) >= 5:
+        yf = qf[TARGET].to_numpy(float)
+        pf = qf.prediction.to_numpy(float)
+        ssf = float(np.sum((yf - pf) ** 2))
+        stf = float(np.sum((yf - yf.mean()) ** 2))
+        out["forward_forecast"]["r2_vs_realized_surface_change"] = (
+            float(1 - ssf / stf) if stf > 0 else None
+        )
+        out["forward_forecast"]["correlation_vs_realized_surface_change"] = float(
+            np.corrcoef(yf, pf)[0, 1]
+        )
     if len(q) >= 30:
         y = q[TARGET].to_numpy(float)
         p = q.prediction.to_numpy(float)
