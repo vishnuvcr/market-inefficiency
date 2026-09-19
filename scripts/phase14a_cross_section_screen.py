@@ -86,7 +86,7 @@ def main() -> None:
     args = ap.parse_args()
 
     df = pd.read_csv(args.input, parse_dates=["date"]).sort_values(["symbol", "date"]).reset_index(drop=True)
-    required = {"date", "symbol", "active_nifty50", "close", "turnover_inr"}
+    required = {"date", "symbol_raw", "active_nifty50", "close", "turnover_inr"}
     missing = sorted(required - set(df.columns))
     if missing:
         raise SystemExit(f"missing columns: {missing}")
@@ -94,7 +94,7 @@ def main() -> None:
     # Prefer the primary EQ series if NSE carries multiple series for the same symbol/date.
     series_priority = {"EQ":0,"BE":1,"BZ":2,"ST":3,"SM":4}
     df["_series_priority"] = df.get("series", "EQ").map(series_priority).fillna(99)
-    df = df.sort_values(["symbol","date","_series_priority"]).drop_duplicates(["symbol","date"], keep="first")
+    df = df.sort_values([instrument,"date","_series_priority"]).drop_duplicates([instrument,"date"], keep="first")
     df = df.drop(columns=["_series_priority"])
     # Daily return proxy uses exchange PREV_CLOSE when available; it avoids raw-price
     # split shocks without inventing an adjusted-price series.
@@ -103,7 +103,7 @@ def main() -> None:
     else:
         df["daily_ret"] = df.groupby("symbol")["close"].pct_change()
     df["turnover_inr"] = pd.to_numeric(df["turnover_inr"], errors="coerce")
-    g = df.groupby("symbol", group_keys=False)
+    instrument = "symbol_raw" if "symbol_raw" in df.columns else "symbol"\n    g = df.groupby(instrument, group_keys=False)
     df["ret20"] = g["daily_ret"].transform(lambda s: (1.0 + s).rolling(20).apply(np.prod, raw=True) - 1.0)
     df["ret5"] = g["daily_ret"].transform(lambda s: (1.0 + s).rolling(5).apply(np.prod, raw=True) - 1.0)
     df["turn20"] = g["turnover_inr"].transform(lambda s: s.rolling(20).median())
@@ -124,9 +124,9 @@ def main() -> None:
         if exit_date >= pd.Timestamp("2026-05-15"):
             continue
         snap = df[df["date"].eq(d)].copy()
-        entry = df[df["date"].eq(entry_date)][["symbol", "close"]].rename(columns={"close":"entry_close"})
-        exit_ = df[df["date"].eq(exit_date)][["symbol", "close"]].rename(columns={"close":"exit_close"})
-        snap = snap.merge(entry,on="symbol",how="left").merge(exit_,on="symbol",how="left")
+        entry = df[df["date"].eq(entry_date)][[instrument, "close"]].rename(columns={instrument:"instrument_key","close":"entry_close"})
+        exit_ = df[df["date"].eq(exit_date)][[instrument, "close"]].rename(columns={instrument:"instrument_key","close":"exit_close"})
+        snap["instrument_key"] = snap[instrument]\n        snap = snap.merge(entry,on="instrument_key",how="left").merge(exit_,on="instrument_key",how="left")
         # Fixed sign conventions: momentum long winners; reversal long losers;
         # liquidity premium long less liquid; volume shock continuation long high shock.
         for name, source, sign in [
