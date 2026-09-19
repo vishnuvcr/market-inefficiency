@@ -18,7 +18,7 @@ from pathlib import Path
 import pandas as pd
 import requests
 
-URL = "https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{ddmmyyyy}.csv"
+URL = "https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{ddmmyyyy}.csv"  # official NSE daily cash bhavcopy
 KEEP_SERIES = {"EQ", "SM", "BE", "BZ", "ST"}
 
 
