@@ -152,25 +152,25 @@ The parser supports the NSE F&O historical trim and historically relevant full r
 ### Phase 11 — Executable surface strategy library
 **Goal:** represent all preregistered market-neutral surface structures with explicit legs and deterministic exposure calculations before connecting them to historical execution fills.
 
-Status: **50% — library implemented; no economic selection performed.**
+Status: **85% — structure/exposure library complete; no economic selection performed.**
 
-The library currently covers skew verticals, risk reversals, butterflies and iron condors and reserves the broader calendar/skew-butterfly/box/straddle families. Theoretical Greeks and terminal payoffs are diagnostics only, never historical execution prices.
+The library now explicitly covers skew verticals, put/call risk reversals, put and call butterflies, iron condors, ATM calendars, skew butterflies, four-leg maturity-spread surface boxes and straddle/strangles. It also exposes a deterministic first-order underlying delta-hedge quantity for structures that require hedging. Theoretical Greeks/payoffs are diagnostics only and are never treated as historical fills.
 
 ### Phase 12 — Execution simulator and cost model
 **Goal:** convert normalized historical order/trade/quote state into leg-level fills, synchronization, slippage, fees, margin and impact.
 
-Status: **70% — execution mechanics implemented and validated; economic backtest still requires bulk historical data.**
+Status: **80% — execution mechanics and multi-schema quote audit implemented; economic backtest remains data-blocked.**
 
-A public TickBytes NIFTY top-of-book/L2 sample has been acquired as a software-validation fixture. The simulator is fail-closed on missing/zero-size/crossed quotes, executes buys at ask and sells at bid, enforces displayed-size capacity and synchronisation, and reports top-of-book spread diagnostics. This sample is not used as a performance dataset.
+Two public NIFTY Level-2/top-of-book fixtures (TickBytes and OptionVault) are preserved only for software validation. The simulator now enforces the declared synchronization window, rejects non-finite/zero-size/crossed quotes, executes buys at ask and sells at bid, enforces displayed-size capacity, and computes quoted cash flow. The quote audit accepts both public schemas and records rejection/duplicate/spread diagnostics.
 
-CI run 35448534215 passed the Phase 10–12 unit-test suite and quote audit.
-
-The official NSE historical order/trade archive remains the required economic-data gate.
+The official NSE historical order/trade archive, or an equivalent licensed timestamped quote/order/trade dataset, remains the required economic-data gate.
 
 ### Phase 13 — Executable CPCV/PBO/DSR validation
-**Goal:** test the full strategy library without post-hoc selection and retain complete path distributions.
+**Goal:** test the full strategy library without post-hoc selection, using only executable fills, and retain complete path distributions.
 
-Status: **not started; depends on Phase 12.**
+Status: **protocol next; implementation can be completed before the economic dataset arrives.**
+
+The preregistration will freeze the candidate set, cost grid, purge/embargo rules, selection rule, risk normalization, and promotion gates before any executable P&L is observed. The phase will not use the rejected 2026-05-15 through 2026-09-18 forward window to tune a replacement candidate.
 
 ### Phase 14 — Untouched executable forward validation
 **Goal:** evaluate the frozen strategy specification once on an untouched later period.
