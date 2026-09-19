@@ -163,6 +163,7 @@ def main() -> None:
             paths = cpcv(net)
             wealth = np.cumprod(1.0 + net)
             dd = wealth / np.maximum.accumulate(wealth) - 1.0
+            valid_paths = paths[np.isfinite(paths)]
             grid[str(cost)] = {
                 "n_events": int(len(net)),
                 "mean_event_return": float(np.mean(net)),
@@ -170,9 +171,9 @@ def main() -> None:
                 "win_rate": float(np.mean(net > 0)),
                 "max_drawdown": float(np.min(dd)),
                 "one_sided_t_p": one_sided_p(net),
-                "cpcv_median_sharpe": float(np.median(paths)),
-                "cpcv_q10_sharpe": float(np.quantile(paths, 0.10)),
-                "cpcv_positive_path_fraction": float(np.mean(paths > 0)),
+                "cpcv_median_sharpe": float(np.median(valid_paths)) if len(valid_paths) else None,
+                "cpcv_q10_sharpe": float(np.quantile(valid_paths, 0.10)) if len(valid_paths) else None,
+                "cpcv_positive_path_fraction": float(np.mean(valid_paths > 0)) if len(valid_paths) else None,
             }
         results[signal] = {"cost_grid": grid}
 
