@@ -50,6 +50,7 @@ TARGET_ENTRY_TTM = 60
 HOLD_DAYS = 30
 PURGE_DAYS = 30
 EMBARGO_DAYS = 5
+PHASE9B_VERSION = "1.1-leakage-controlled"
 
 
 def load_iv(root: Path) -> pd.DataFrame:
@@ -512,6 +513,7 @@ def main() -> None:
     out = {
         "status": "PASS",
         "phase": "9B",
+        "implementation_version": PHASE9B_VERSION,
         "objective": "Settlement-proxy test of frozen 30D downside-skew surface signal",
         "model": {
             "features": FEATURES,
