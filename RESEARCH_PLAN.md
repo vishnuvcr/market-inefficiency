@@ -107,10 +107,17 @@ Status: **candidate screen complete**. A six-rule NIFTY settlement proxy was tes
 
 Status: **current candidate stress-test complete**. 28-path CPCV, CSCV-style PBO and an approximate DSR diagnostic were run on the first 90%, with the Phase 6 final 10% held untouched.
 
-### Phase 8 — Paper-trading validation
-**Goal:** compare research assumptions with live market behavior without capital risk.
+### Phase 8 — Fresh-forward validation
+**Goal:** test the strongest surviving predictions on genuinely later data before any paper-trading decision.
 
-Status: 0%.
+Status: **60% — fresh-forward multimodal and underlying-only branches completed; volatility-surface dynamics passed CPCV as a predictive diagnostic.**
+
+The full fresh-forward multimodal model achieved AUC **0.5744** for five-session volatility expansion on 87 forward observations, down from the earlier historical holdout result. None of the six fixed volatility-conditioned strategy families passed the 20-bps promotion gate. The underlying-only Phase 8B branch was also rejected.
+
+Phase 8C found that surface-shape predictors remain robust under 28-path CPCV with a 30-day purge and 5-day embargo; 30D downside skew had median OOS R² **0.3166** and was positive on 100% of paths. This is predictive surface evolution, not executable P&L.
+
+### Next gate — execution-grade surface-relative-value validation
+Use historical bid/ask/order/trade information, leg synchronization, depth, margin and realistic transaction costs to determine whether the robust surface-dynamics signal can become an executable option strategy. No paper-trading promotion should occur before this gate passes.
 
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
