@@ -4,9 +4,9 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 11 — strategy library implemented; execution-data gate remains open**
+**Phase 12 — execution mechanics validated; economic execution-data gate remains open**
 
-Status: **PHASE 10 SOFTWARE-READY; PHASE 11 LIBRARY IMPLEMENTED; NO EXECUTABLE STRATEGY PROMOTED**
+Status: **PHASE 11 LIBRARY COMPLETE; PHASE 12 ENGINE PASS; NO EXECUTABLE STRATEGY PROMOTED**
 
 The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
@@ -26,8 +26,8 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 9A. Surface-relative-value execution validation | 🟡 Protocol defined | 10% | Historical bid/ask/order-trade acquisition and executable-price reconstruction |
 | 9B. Frozen surface-signal settlement-proxy | 🟡 Completed / rejected | 70% | Direct 10Δ/50Δ skew vertical failed fresh-forward settlement-proxy gate; keep only as reproducible paper-monitoring rule |
 | 10. Historical execution-data layer | 🟡 Software-ready / data-blocked | 40% | Licensed historical order/trade/quote data required for executable fills |
-| 11. Surface strategy library | 🟡 Implemented / mechanically validated | 60% | Broad leg/exposure library ready; no strategy selection before execution data |
-| 12. Execution simulator / quote audit | 🟡 Mechanically passed / economic data blocked | 70% | Public NIFTY top-of-book/L2 sample validates execution mechanics; bulk historical archive still required |
+| 11. Surface strategy library | 🟢 Structure library complete | 85% | Connect explicit structures to historical execution data; no post-hoc selection |
+| 12. Execution simulator / quote audit | 🟢 Mechanically passed / economic data blocked | 80% | Multi-schema public fixtures validate execution mechanics; bulk historical archive still required |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Phase 9A — execution-grade surface-relative-value validation
@@ -279,17 +279,15 @@ Detailed protocol/results: docs/PHASE10_EXECUTION_DATA_PROTOCOL.md and docs/PHAS
 
 ## Phase 11 — surface strategy library
 
-A broad strategy/exposure library is implemented for skew verticals, risk reversals, butterflies, iron condors and reserved additional surface structures. It computes deterministic theoretical exposure diagnostics and terminal payoffs only. It does not rank structures or use theoretical prices as historical fills.
+The strategy structure library is now complete for the preregistered families: skew verticals, risk reversals, put/call butterflies, iron condors, ATM calendars, skew butterflies, four-leg surface boxes and straddle/strangles. Each structure has explicit legs plus deterministic theoretical exposure/payoff diagnostics. No theoretical price is used as a historical fill and no candidate is selected post-hoc.
 
 Detailed design: docs/PHASE11_EXECUTION_LIBRARY.md.
 
 
 ## Phase 12 — execution simulator and quote audit
 
-A public NIFTY option top-of-book/L2 sample from the TickBytes repository was acquired and added only as a test fixture. It contains timestamped best bid/ask, quantities and five visible depth levels. The simulator now rejects missing/zero-size/non-finite/crossed quotes, executes buys at contemporaneous ask and sells at contemporaneous bid, rejects insufficient displayed size, and requires synchronized multi-leg timestamps in the sample mode.
+Two public NIFTY Level-2/top-of-book samples are preserved as software-validation fixtures: TickBytes and OptionVault. The simulator was corrected so the declared synchronization-window argument is actually enforced. The quote audit now supports both sample schemas, counts rejection reasons, checks duplicate symbol/timestamp keys and reports spread diagnostics.
 
-CI run 35448534215 passed all Phase 10–12 unit tests and the quote audit.
-
-This does **not** unlock a historical economic backtest. The public sample is representative data, not a multi-month licensed archive. Official NSE historical F&O order/trade data remain the required source for full execution-grade reconstruction. Therefore no executable trading strategy has been promoted.
+These fixtures validate mechanics only; they are not a multi-month execution archive. The bulk historical order/quote/trade gate therefore remains open, and no executable trading strategy has been promoted. Detailed results: docs/PHASE12_RESULTS.md.
 
 The current strongest reproducible rule remains the frozen Phase 9B surface-monitoring specification, but its fresh settlement-proxy P&L was negative and it is not validated for capital trading.
