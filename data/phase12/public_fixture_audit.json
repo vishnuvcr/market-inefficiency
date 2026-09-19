@@ -1,0 +1,43 @@
+{
+  "generated_on": "2026-09-19",
+  "purpose": "software-validation only; not strategy performance",
+  "sources": [
+    {
+      "name": "TickBytes NIFTY option sample",
+      "file": "tests/fixtures/tickbytes_nifty_opt_sample.csv",
+      "rows": 50,
+      "valid_quotes": 49,
+      "rejected_quotes": 1,
+      "rejection_reasons": {
+        "missing/zero": 1
+      },
+      "unique_symbols": 50,
+      "duplicate_symbol_timestamp_rows": 0,
+      "start_time_utc": "2026-08-07T09:46:13.219Z",
+      "end_time_utc": "2026-08-07T09:46:13.219Z",
+      "median_spread_bps": 504.3266965857531,
+      "p90_spread_bps": 3367.331937292924,
+      "max_spread_bps": 19075.014100394812,
+      "median_bid_qty": 585,
+      "median_ask_qty": 195
+    },
+    {
+      "name": "OptionVault NIFTY Level-2 sample",
+      "file": "tests/fixtures/optionvault_nifty_level2_sample.csv",
+      "rows": 13,
+      "valid_quotes": 13,
+      "rejected_quotes": 0,
+      "rejection_reasons": {},
+      "unique_symbols": 1,
+      "duplicate_symbol_timestamp_rows": 0,
+      "start_time_utc": "2026-07-22T09:01:57.878Z",
+      "end_time_utc": "2026-07-22T09:15:35.506Z",
+      "median_spread_bps": 1860.4651162790706,
+      "p90_spread_bps": 2338.4968445209406,
+      "max_spread_bps": 2650.602409638554,
+      "median_bid_qty": 65,
+      "median_ask_qty": 390
+    }
+  ],
+  "conclusion": "Both public fixtures execute through the simulator and expose realistic quote-quality problems, including one rejected zero executable quote in the TickBytes sample. The samples are far too small and concentrated to support economic strategy inference."
+}
