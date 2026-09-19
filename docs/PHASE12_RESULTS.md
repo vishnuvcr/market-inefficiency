@@ -1,28 +1,43 @@
 # Phase 12 — Execution Simulator Results
 
-## Public execution-data sample acquired
+## Public execution-data samples acquired
 
-A 50-row public NIFTY option-feed sample from TickBytes was imported as a test fixture. The sample contains timestamped option rows with L1 quote fields (`bid_px`, `ask_px`, `bid_qty`, `ask_qty`) and five visible depth levels. It is a schema/engine validation sample, not a historical backtest dataset. TickBytes states that its full feed is a subscription product; the repository exposes representative samples under an MIT licence. citeturn435086view0turn435086view1
+Two public NIFTY Level-2/top-of-book samples are now preserved as **software-validation fixtures**:
 
-## Simulator completed
+1. TickBytes NIFTY option sample: timestamped L1 quote fields plus five visible depth levels.
+2. OptionVault NIFTY Level-2 sample: timestamped five-level bid/ask depth with quantities.
 
-The engine now:
+Both repositories describe their public files as representative/evaluation samples rather than a complete multi-month research archive. TickBytes states that its full daily feed is a subscription product, while OptionVault states that the complete historical dataset is licensed and the repository samples are provided for evaluation. citeturn112898search0turn112898search1
 
-- rejects missing, zero-size, non-finite and crossed quotes;
+The fixtures are **not** used for strategy performance, CPCV, PBO, DSR, or any profitability claim.
+
+## Simulator correction
+
+A real implementation bug was fixed: the simulator accepted a `max_time_gap_seconds` argument but previously ignored it and required exact timestamp equality. It now parses ISO-8601 timestamps and rejects multi-leg execution when the quote timestamp span exceeds the declared synchronization window.
+
+The engine remains fail-closed:
+
+- rejects non-finite, non-positive and crossed quotes;
 - buys at contemporaneous ask and sells at contemporaneous bid;
-- rejects legs whose displayed quantity cannot satisfy the requested size;
-- requires synchronized leg timestamps in the sample mode;
-- calculates strategy net cash flow from actual quoted execution prices;
-- preserves a clean separation between quote-based execution and EOD settlement research.
+- rejects insufficient displayed size;
+- rejects missing legs;
+- enforces the declared multi-leg timestamp window;
+- computes net cash flow from actual quoted prices.
 
-## Key limitation
+## Quote audit
 
-The public sample is only a representative 50-row snapshot, not a multi-month historical quote/order/trade archive. Therefore it can validate the mechanics but cannot supply statistically meaningful executable P&L.
+The quote audit now accepts both common public schemas (`bid_px/ask_px` and `bid_price1/ask_price1`), counts rejected rows by reason, detects duplicate symbol/timestamp keys and reports median/P90/max top-of-book spread.
 
-NSE's own documentation confirms that historical F&O order/trade data is a separate paid data product, while sample archives are provided publicly. citeturn725691view0
+This is deliberately an **input-quality audit**, not a performance report.
+
+## Critical limitation
+
+The available public fixtures are small representative samples. They cannot provide statistically meaningful historical executable P&L for the surface strategies.
+
+NSE's historical F&O order/trade infrastructure remains the required source for a genuine execution-grade economic backtest; ordinary EOD option records are not substituted for those observations.
 
 ## Phase 12 decision
 
 **ENGINE PASS; ECONOMIC BACKTEST STILL DATA-BLOCKED.**
 
-No historical bid/ask series has been fabricated from settlement data. The execution engine is ready to consume licensed historical quotes/order-trade files once supplied.
+The software path is ready. The remaining serious blocker is bulk historical execution data with sufficient timestamped quote/order/trade coverage, contract identity, lot-size provenance, and PIT execution information.
