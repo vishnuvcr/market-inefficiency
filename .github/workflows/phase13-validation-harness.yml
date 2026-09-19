@@ -1,0 +1,23 @@
+name: Phase 13 — executable validation harness
+on:
+  push:
+    branches: [research/phase9-surface-execution]
+    paths:
+      - scripts/phase13_trade_table_validator.py
+      - tests/test_phase13_trade_table_validator.py
+      - .github/workflows/phase13-validation-harness.yml
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  phase13:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install --disable-pip-version-check 'pytest>=8,<9'
+      - run: pytest -q tests/test_phase13_trade_table_validator.py
