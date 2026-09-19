@@ -1,0 +1,4 @@
+source_name,source_type,coverage,granularity,quotes,depth,orders,trades,contract_id,pit_lot_size,status,notes
+NSE_Historical_Order_Trade,official_exchange_historical,custom_range,timestamped events,order-book/order events,order-book events,yes,yes,yes,requires PIT contract master,REQUIRED_EXTERNAL,"Official NSE historical F&O order/trade data product; acquisition/license not present in repository"
+TickBytes_public_sample,public_evaluation_sample,representative sample,tick,yes,top-5,not full order archive,trade ticks,provider symbol,not frozen,SOFTWARE_FIXTURE,"Used only for simulator/quote-audit validation"
+OptionVault_public_sample,public_evaluation_sample,representative sample,timestamped L2,yes,top-5,not full order archive,trade events/volume,provider symbol,not frozen,SOFTWARE_FIXTURE,"Used only for simulator/quote-audit validation"
