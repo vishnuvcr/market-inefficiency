@@ -28,7 +28,11 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 10. Historical execution-data layer | 🟡 Software-ready / data-blocked | 40% | Licensed historical order/trade/quote data required for executable fills |
 | 11. Surface strategy library | 🟢 Structure library complete | 85% | Connect explicit structures to historical execution data; no post-hoc selection |
 | 12. Execution simulator / quote audit | 🟢 Mechanically passed / economic data blocked | 80% | Multi-schema public fixtures validate execution mechanics; bulk historical archive still required |
-| 13. Executable CPCV/PBO/DSR validation | ⚪ Protocol frozen / harness added | 15% | Load genuine executable trades; then run preregistered CPCV/PBO/DSR and stress gates |
+| 13. Executable CPCV/PBO/DSR validation | 🟡 Protocol frozen / harness added | 25% | Load genuine executable trades; then run preregistered CPCV/PBO/DSR and stress gates |
+| 14A. Broad inefficiency discovery | 🟡 Protocol frozen / data-readiness next | 10% | Audit all listed mechanisms; run standalone screens first, then preregistered equal-risk combinations |
+| 15. Untouched executable forward | ⚪ Not started | 0% | Begins only after executable Phase 13 validation |
+| 16. Paper trading | ⚪ Not started | 0% | Begins only after untouched executable forward |
+| 17. Live governance | ⚪ Not started | 0% | Drift/revalidation automation |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Phase 9A — execution-grade surface-relative-value validation
@@ -301,3 +305,20 @@ The preregistration is now frozen in `docs/PHASE13_EXECUTABLE_VALIDATION.md`. A 
 This is a **software/protocol gate only**. No Phase 13 profitability result is being claimed because the required bulk historical execution dataset is still absent.
 
 The current blocker is therefore concrete rather than analytical: licensed timestamped NIFTY quote/order/trade history (or equivalent) with contract identity, displayed depth/quotes, fill reconstruction inputs and PIT lot-size provenance.
+
+
+## Phase 14A — broad inefficiency discovery and combinations
+
+A new preregistered discovery branch is now frozen in `docs/PHASE14_BROAD_INEFFICIENCY_DISCOVERY.md`, with the machine-readable hypothesis registry in `data/phase14/inefficiency_hypothesis_registry.csv`.
+
+The branch deliberately comes **before optimization**. It asks two questions in order:
+
+1. Does each mechanism, alone, produce a meaningful trading effect under a fixed simple implementation and predefined costs?
+2. After the individual screen is frozen, do preregistered equal-risk combinations of distinct mechanisms add robustness without fitted weights?
+
+The first subphase is a data-readiness audit. Current official NSE sources provide historical security-wise price/volume archives for equities, contract-wise price/volume data for equity derivatives, historical index/VIX data, and current NIFTY constituent information. Historical membership/weights still require a point-in-time reconstruction rather than using the current list. citeturn647895search0turn647895search1turn647895search2turn647895search7
+
+Microstructure remains explicitly blocked for economic conclusions until genuine timestamped quote/order/trade data are available. NSE documents historical F&O order/trade data with transaction-time fields and separate historical EOD/historical data products; these are not interchangeable. citeturn524576search41turn524576search7
+
+No Phase 14A candidate may be optimized because it looks promising in the discovery screen. A candidate advances only after the frozen signal survives the project's leakage, cost, CPCV, multiple-testing, negative-control and later-holdout gates.
+
