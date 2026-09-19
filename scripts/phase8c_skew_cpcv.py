@@ -105,8 +105,16 @@ def cpcv(df,purge_days=30,embargo_days=5):
         test_idx=np.concatenate([blocks[i] for i in pair]); test=df.iloc[test_idx].copy()
         test_min,test_max=test.date.min(),test.date.max()
         train=df.drop(test_idx).copy()
-        # Conservative date purge around the entire test span + embargo.
-        train=train[(train.date < test_min-pd.Timedelta(days=purge_days)) | (train.date > test_max+pd.Timedelta(days=embargo_days))]
+        # Purge only observations whose label window can overlap a test-date
+        # observation. This preserves valid CPCV paths when test blocks are
+        # separated in time (e.g. blocks 0 and 7).
+        bad=np.zeros(len(train),dtype=bool)
+        for td in test.date.to_numpy():
+            bad |= train.date.between(
+                td-pd.Timedelta(days=int(purge_days)),
+                td+pd.Timedelta(days=int(embargo_days))
+            ).to_numpy()
+        train=train.loc[~bad].copy()
         if len(train)<200 or len(test)<20: continue
         for f in SHAPES:
             rows.append({"pair":str(pair),"feature":f,"oos_r2":fit_eval(train,test,f),
