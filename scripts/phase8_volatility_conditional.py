@@ -65,6 +65,7 @@ def load_underlying_pair(old_path: Path, new_path: Path) -> pd.DataFrame:
     u["ret1"] = np.log(u["close"] / u["close"].shift(1))
     u["ret5"] = np.log(u["close"] / u["close"].shift(5))
     u["ret20"] = np.log(u["close"] / u["close"].shift(20))
+    u["ret60"] = np.log(u["close"] / u["close"].shift(60))
     for w in (5, 20, 60):
         u[f"rv_{w}"] = np.sqrt(
             u["ret1"].shift(1).rolling(w).apply(
