@@ -75,3 +75,18 @@ A candidate that fails any hard gate is rejected for the current specification.
 PROTOCOL FROZEN / ECONOMIC RUN BLOCKED BY HISTORICAL EXECUTION DATA.
 
 The software layers are being completed now so that licensed execution data can be loaded without changing the research design.
+
+## Software completed
+
+The following components are now implemented:
+
+- minimum executable-trade schema validation;
+- order-independent overlap detection;
+- event-time Sharpe;
+- combinatorial purged path generation;
+- PBO diagnostic over the frozen candidate set;
+- approximate DSR diagnostic using the fixed trial count.
+
+The CPCV implementation keeps all events sharing a decision date in the same group so a same-date candidate observation cannot straddle train and test groups.
+
+These functions are statistical infrastructure only. No market data have been run through them yet.
