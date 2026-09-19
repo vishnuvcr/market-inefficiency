@@ -4,9 +4,9 @@ from scripts.phase14a_cross_section_screen import main
 def test_cross_section_screen_smoke(tmp_path, monkeypatch):
     rows=[]
     dates=pd.date_range('2020-01-01',periods=120,freq='B')
-    for d in dates:
+    for di,d in enumerate(dates):
         for i in range(50):
-            px=100+i*0.01+len(rows)*0.001
+            px=100+i*0.03+di*0.08+(i%9)*(di%13)*0.006
             rows.append({'date':d,'symbol':f'S{i:02d}','symbol_raw':f'S{i:02d}','active_nifty50':True,'close':px,'prev_close':px-0.01,'turnover_inr':1e8+i*1e6})
     inp=tmp_path/'x.csv'; out=tmp_path/'y.json'
     pd.DataFrame(rows).to_csv(inp,index=False)
