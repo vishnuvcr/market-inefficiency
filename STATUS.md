@@ -4,9 +4,9 @@ Last updated: 2026-09-19
 
 ## Overall phase
 
-**Phase 9A — Execution-grade surface-relative-value validation**
+**Phase 9B — Surface-signal settlement-proxy validation completed; execution-grade gate remains open**
 
-Status: **PROTOCOL DEFINED; EXECUTION-DATA ACQUISITION GATE OPEN**
+Status: **PHASE 9B COMPLETED; DIRECT STRATEGY REJECTED FOR PROMOTION; EXECUTION DATA STILL REQUIRED**
 
 The research has now returned to the broader market-inefficiency objective. Direct next-day direction prediction did not survive the Phase 5 holdout, while 5-session volatility-expansion prediction showed materially stronger out-of-sample information. A fixed inverse-direction candidate briefly produced a positive final 10% settlement-based result at low assumed costs, but Phase 7 CPCV showed that effect is not stable in the development history.
 
@@ -24,6 +24,7 @@ The research has now returned to the broader market-inefficiency objective. Dire
 | 7. Statistical validation | 🟢 Current candidate stress-tested | 100% | Inverse-direction candidate rejected; CPCV/PBO/DSR diagnostics complete |
 | 8. Fresh-forward + execution validation | 🟢 Fresh-forward research tests completed | 100% | No strategy promoted; Phase 8 exit conclusion recorded |
 | 9A. Surface-relative-value execution validation | 🟡 Protocol defined | 10% | Historical bid/ask/order-trade acquisition and executable-price reconstruction |
+| 9B. Frozen surface-signal settlement-proxy | 🟡 Completed / rejected | 70% | Direct 10Δ/50Δ skew vertical failed fresh-forward settlement-proxy gate; keep only as reproducible paper-monitoring rule |
 | 9. Ongoing governance | ⚪ Not started | 0% | Drift/revalidation automation |
 
 ## Phase 9A — execution-grade surface-relative-value validation
@@ -246,3 +247,22 @@ These are predictive diagnostics for future surface evolution, not executable op
 The direct-direction and volatility-state directional strategies have failed robustness/fresh-forward promotion gates. The reproducible remaining signal is the **option-volatility surface**, especially 30D downside skew. The next scientific gate is execution-grade surface-relative-value testing using historical bid/ask, order/trade timing, depth, leg synchronization, margin and realistic transaction costs.
 
 Detailed Phase 8 results: docs/PHASE8_RESULTS.md.
+
+
+## Phase 9B — frozen surface-signal settlement-proxy
+
+Phase 9B is complete. GitHub Actions run 35442399330 passed all acquisition, reconstruction, execution of the research script, validation and artifact-upload steps.
+
+Fresh-forward coverage is 2026-05-15 through 2026-09-18 with 135,243 valid IV observations and 88 validated option sessions. The leakage-controlled expanding Ridge forecast continued to predict the subsequent 30D downside-skew change out of sample: forward R² 0.3029 and correlation 0.5695.
+
+The direct mechanism-first strategy was a same-expiry approximately 10-delta/50-delta put vertical, entry 45–75 days to expiry, 30-calendar-day hold, one entry delta hedge, no overlapping positions, and EOD settlement proxy pricing.
+
+Fresh-forward result: 4 non-overlapping trades; −₹14,828 total settlement-proxy P&L; 25% win rate; approximate event annualized Sharpe −0.87; mean P&L / entry-risk proxy −7.9%.
+
+Therefore the direct strategy is rejected for paper-trading promotion.
+
+The reverse-direction result is retained only as a negative control. It happened to be positive on the same four forward trades, but selecting it now would be post-hoc selection. A one-day delay and random-entry controls also produced unstable results, reinforcing that the four-trade forward sample cannot be used to tune the strategy.
+
+Detailed reproducible results are in docs/PHASE9B_RESULTS.md.
+
+Usable current conclusion: the option-surface predictor remains informative about future surface shape, but Phase 9B did not establish a profitable settlement-proxy trading strategy. The reproducible rule can be used for paper monitoring only, not capital deployment. Execution-grade validation still requires historical bid/ask/order-trade data, executable multi-leg reconstruction, realistic costs and an untouched validation gate.
