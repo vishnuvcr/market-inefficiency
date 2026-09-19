@@ -24,7 +24,7 @@ def test_vertical_payoff_is_finite():
     e = strategy_exposure(s, 25000, 0.06)
     assert all(k in e for k in ("price", "delta", "gamma", "vega", "theta"))
     assert all(abs(v) < 1e9 for v in e.values())
-    assert terminal_payoff(s, 23000) >= 0
+    assert terminal_payoff(s, 23000) == -1000
 
 
 def test_iron_condor_is_four_legs():
