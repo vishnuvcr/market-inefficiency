@@ -1,0 +1,73 @@
+name: Phase 8C — volatility surface skew CPCV validation
+
+on:
+  push:
+    branches: [research/phase8-volatility-forward]
+    paths:
+      - scripts/phase8c_skew_cpcv.py
+      - .github/workflows/phase8c-skew-cpcv.yml
+  workflow_dispatch:
+
+concurrency:
+  group: phase8c-skew-cpcv
+  cancel-in-progress: true
+
+permissions:
+  actions: read
+  contents: read
+
+jobs:
+  phase8c:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.12"}
+      - run: python -m pip install --disable-pip-version-check "pandas>=2.2,<3" "numpy>=1.26,<3" "scikit-learn>=1.5,<2"
+      - name: Resolve latest successful historical Phase 4B run
+        id: src
+        env: {GH_TOKEN: ${{ github.token }}
+        }
+        run: |
+          run="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "Phase 4B — reconstruct NIFTY implied-volatility surfaces" --branch research/v1.0-protocol --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          und="$(gh run list --repo "$GITHUB_REPOSITORY" --workflow "Acquire official NIFTY 50 underlying" --branch research/v1.0-protocol --status success --limit 1 --json databaseId --jq '.[0].databaseId')"
+          test -n "$run"; test -n "$und"; echo "run=$run" >> "$GITHUB_OUTPUT"; echo "und=$und" >> "$GITHUB_OUTPUT"
+      - name: Download frozen Phase 4B IV
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.src.outputs.run }}
+          pattern: phase4b-iv-surfaces-*
+          path: data/phase8c/iv
+          merge-multiple: true
+      - name: Download historical underlying
+        uses: actions/download-artifact@v5
+        with:
+          github-token: ${{ github.token }}
+          repository: ${{ github.repository }}
+          run-id: ${{ steps.src.outputs.und }}
+          pattern: phase4a-official-nifty-index-*
+          path: data/phase8c/underlying
+          merge-multiple: true
+      - name: Run Phase 8C
+        run: |
+          OLD="$(find data/phase8c/underlying -type f -name nifty50_ohlc.csv -print -quit)"
+          python scripts/phase8c_skew_cpcv.py --iv-root data/phase8c/iv --underlying "$OLD" --out data/phase8c/report
+      - name: Validate and print
+        run: |
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads((Path("data/phase8c/report")/"PHASE8C_SKEW_CPCV_REPORT.json").read_text())
+          assert r["status"]=="PASS"
+          assert r["cpcv_paths"]==28
+          print(json.dumps(r["summary"],indent=2))
+          print(json.dumps(r["decision"],indent=2))
+          PY
+      - name: Upload
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase8c-skew-cpcv-${{ github.sha }}
+          path: data/phase8c/report
+          retention-days: 90
