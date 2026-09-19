@@ -142,6 +142,45 @@ The reverse-sign result is retained as a negative control and cannot be promoted
 
 **Phase 9B decision:** REJECTED for capital trading and for paper-trading promotion. The rule is retained only as a reproducible paper-monitoring specification. The next valid research step is execution-grade historical quote/order-trade validation or a separately preregistered new monetization hypothesis; the fresh 2026 forward period must not be reused to tune a replacement strategy.
 
+### Phase 10 — Historical execution-data reconstruction
+**Goal:** normalize genuine historical NIFTY option order/trade/quote information and make point-in-time executable reconstruction possible.
+
+Status: **40% — software/schema layer implemented; external licensed data gate remains open.**
+
+The parser supports the NSE F&O historical trim and historically relevant full record sizes, preserves raw-file hashes, performs exact jiffy conversion, and rejects unsupported layouts. No bid/ask is inferred from EOD data.
+
+### Phase 11 — Executable surface strategy library
+**Goal:** represent all preregistered market-neutral surface structures with explicit legs and deterministic exposure calculations before connecting them to historical execution fills.
+
+Status: **50% — library implemented; no economic selection performed.**
+
+The library currently covers skew verticals, risk reversals, butterflies and iron condors and reserves the broader calendar/skew-butterfly/box/straddle families. Theoretical Greeks and terminal payoffs are diagnostics only, never historical execution prices.
+
+### Phase 12 — Execution simulator and cost model
+**Goal:** convert normalized historical order/trade/quote state into leg-level fills, synchronization, slippage, fees, margin and impact.
+
+Status: **blocked on Phase 10 licensed data.**
+
+### Phase 13 — Executable CPCV/PBO/DSR validation
+**Goal:** test the full strategy library without post-hoc selection and retain complete path distributions.
+
+Status: **not started; depends on Phase 12.**
+
+### Phase 14 — Untouched executable forward validation
+**Goal:** evaluate the frozen strategy specification once on an untouched later period.
+
+Status: **not started; depends on Phase 13.**
+
+### Phase 15 — Paper trading
+**Goal:** prospective implementation validation before capital.
+
+Status: **not started; only eligible after Phase 14.**
+
+### Phase 16 — Live governance
+**Goal:** monitor drift, liquidity, execution quality and retirement/revalidation triggers.
+
+Status: **not started.**
+
 ### Phase 9 — Ongoing research and model governance
 **Goal:** prevent research decay after initial validation.
 
