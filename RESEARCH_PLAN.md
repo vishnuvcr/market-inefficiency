@@ -1,5 +1,9 @@
 # Market Inefficiency Research — Master Research Plan v1.0
 
+> **Continuity protocol:** `docs/PROJECT_CONTINUITY_MASTER.md` is the persistent cross-chat research memory. Before any new step, read it plus `STATUS.md`, this plan, the relevant phase documents, and current workflow state. After every substantive step, update the continuity master and `docs/CHAT_DECISION_LOG.md`.
+
+
+
 ## Research objective
 
 Build a reproducible research system that tests whether structural inefficiencies exist in Indian derivatives markets and whether they can survive realistic transaction costs, regime changes, multiple-testing penalties, and strict out-of-sample validation.
