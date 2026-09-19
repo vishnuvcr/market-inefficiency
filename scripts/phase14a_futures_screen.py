@@ -156,23 +156,42 @@ def main() -> None:
             continue
         f0=float(r["near_settle"]); fn=float(lookup[nk]);
         f20=float(r["next_settle"]); fx=float(lookup[xk]); spot=float(r["spot"])
-        basis_pnl = -(fn-f0)/spot if r["basis_ann"]>0 else (fn-f0)/spot
+        # Market-neutral cash-and-carry proxy: future leg plus opposite spot leg.
+        # Use the underlying value embedded in the exit futures observation to avoid
+        # silently assuming the spot index was unchanged.
+        exit_spot_row = fno[(fno["trade_date"].eq(exit_day)) & (fno["expiry"].eq(pd.Timestamp(r["near_expiry"])))]
+        if exit_spot_row.empty:
+            continue
+        exit_spot=float(exit_spot_row.iloc[0]["FH_UNDERLYING_VALUE"])
+        basis_pnl = ((exit_spot-spot)-(fn-f0))/spot if r["basis_ann"]>0 else ((fn-f0)-(exit_spot-spot))/spot
         curve_change=(fx-fn)/spot-(f20-f0)/spot
         curve_pnl = -curve_change if r["curve_slope_ann"]>0 else curve_change
         days_to_expiry=(pd.Timestamp(r["near_expiry"])-pd.Timestamp(r["entry_date"])).days
-        expiry_pnl=(fn-f0)/spot if days_to_expiry<=5 else 0.0
+        # Fixed sign: expiry-flow hypothesis is short-term reversal in the underlying.
+        expiry_pnl=((exit_spot-spot)/spot) * -1.0 if days_to_expiry<=5 else 0.0
         rec=dict(r); rec.update({"basis_ret":basis_pnl,"curve_ret":curve_pnl,"expiry_ret":expiry_pnl})
         basis_ret.append(rec)
     out=pd.DataFrame(basis_ret)
     if out.empty: raise SystemExit("No complete 5-session futures events")
     signals={"FUT_BASIS":"basis_ret","FUT_TERM":"curve_ret","EXPIRY_EFFECT":"expiry_ret"}
     results={sig:{"cost_grid":summarize(out[col].to_numpy(float))} for sig,col in signals.items()}
+    zero_cost_p={sig:results[sig]["cost_grid"]["0.0"]["one_sided_t_p"] for sig in signals}
+    sign_flip={sig:{"cost_grid":summarize(-out[col].to_numpy(float))} for sig,col in signals.items()}
+    ordered=sorted(zero_cost_p,key=zero_cost_p.get)
+    qvals={}
+    running=1.0
+    m=len(ordered)
+    for rank,sig in reversed(list(enumerate(ordered,1))):
+        running=min(running,zero_cost_p[sig]*m/rank)
+        qvals[sig]=running
     out.to_csv(Path(args.output).with_suffix(".events.csv"),index=False)
     payload={
        "phase":"14A.1","track":"nifty_futures",
        "development_end":"2026-05-14","forward_period_excluded":"2026-05-15_to_2026-09-18",
        "mechanics":"nearest eligible futures vs spot and first deferred eligible futures, fixed 5-session horizon",
        "results":results,
+       "sign_flip_controls":sign_flip,
+       "bh_qvalues_at_zero_cost":qvals,
        "execution_label":"settlement_proxy_only",
        "decision":"discovery_screen_only_no_optimization",
     }
