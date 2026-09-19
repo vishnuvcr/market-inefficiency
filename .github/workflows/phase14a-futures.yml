@@ -1,0 +1,43 @@
+name: Phase 14A futures discovery
+on:
+  push:
+    branches:
+      - research/phase9-surface-execution
+    paths:
+      - "scripts/phase14a_fno_acquire.py"
+      - "scripts/phase14a_futures_screen.py"
+      - ".github/workflows/phase14a-futures.yml"
+  workflow_dispatch:
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Install dependencies
+        run: pip install pandas numpy scipy requests pytest
+      - name: Run tests
+        run: pytest -q tests/test_phase14a_fno_acquire.py tests/test_phase14a_futures_screen.py
+      - name: Acquire official NIFTY futures and index history
+        run: |
+          mkdir -p data/phase14/runs/futures
+          python scripts/phase14a_fno_acquire.py \
+            --start 2020-04-13 \
+            --end 2026-05-14 \
+            --futures-output data/phase14/runs/futures/nifty_futures.csv \
+            --index-output data/phase14/runs/futures/nifty_index.csv \
+            --sleep 0.75
+      - name: Run frozen futures discovery screen
+        run: |
+          python scripts/phase14a_futures_screen.py \
+            --futures data/phase14/runs/futures/nifty_futures.csv \
+            --output data/phase14/runs/futures/phase14a_futures_results.json
+      - name: Upload futures discovery artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase14a-futures-${{ github.sha }}
+          path: data/phase14/runs/futures/
