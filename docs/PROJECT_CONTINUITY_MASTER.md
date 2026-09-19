@@ -457,3 +457,44 @@ The most important currently open empirical questions are:
 4. whether additional option structures monetize the surviving surface predictors;
 5. whether any cross-mechanism combination provides robustness without fitted weights.
 
+## 2026-09-19 — Continuity checkpoint after repository-first inspection
+
+User instruction reaffirmed:
+- Before moving into **any** project step, inspect the GitHub repository continuity files first.
+- Persist every substantive phase update, decision, correction, blocker, user research requirement, result and next-step gate in the repository so new chats do not depend on model memory.
+- Preserve the frozen scientific methodology; do not use continuity work as a pretext for optimization or post-hoc selection.
+
+Repository inspection completed before any new research action:
+- `docs/PROJECT_CONTINUITY_MASTER.md`
+- `STATUS.md`
+- `RESEARCH_PLAN.md`
+- `docs/CHAT_DECISION_LOG.md`
+- `docs/PHASE14_BROAD_INEFFICIENCY_DISCOVERY.md`
+- `docs/PHASE14A1_RESULTS.md`
+- PR #11 metadata and current branch/head state
+- current workflow status for the branch head
+
+Verified repository state at this checkpoint:
+- branch: `research/phase9-surface-execution`
+- PR: #11, open and draft
+- branch head inspected: `eaa6e5ebab146d263157f1bcfd3f96e1f72a58ae`
+- latest workflow checked for that head: Research Protocol Check run `35451422965`, completed successfully
+- no new economic result was inferred from that CI check
+
+Current research state remains unchanged:
+- Phase 14A is the active broad-inefficiency discovery branch.
+- Phase 14A.1 has established the first mixed discovery result: NIFTY time-series momentum/reversal does not clear the discovery gate; the short-straddle observation remains a broad short-volatility-premium hypothesis rather than a validated VRP timing rule.
+- Cross-sectional and futures screens remain subject to explicit workflow/data verification before economic conclusions are recorded.
+- Genuine historical executable quote/order/trade data remain required for executable option/microstructure claims.
+- The 2026-05-15 through 2026-09-18 period remains permanently frozen against replacement-strategy tuning.
+- **No optimization is opened at this checkpoint.**
+
+Continuity interpretation:
+- The repository, not model memory, is the source of project truth.
+- Future steps must start by re-reading the continuity master, status, research plan, relevant protocol/results, and current workflow state.
+- Future steps must end by recording the substantive action, evidence, decision and frozen constraints in the continuity files.
+- Private hidden chain-of-thought is not exported; the repository preserves the actionable reasoning summary, evidence trail, decision rationale, corrections and reproducibility constraints needed to continue the research safely.
+
+Next gate remains:
+`finish Phase 14A.0/data readiness -> finish standalone Phase 14A.1 screens -> apply cost/CPCV/multiple-testing controls -> test preregistered equal-risk combinations -> open a separately frozen optimization phase only for mechanisms that clear discovery gates -> reserve/execute an untouched later validation`.
+
