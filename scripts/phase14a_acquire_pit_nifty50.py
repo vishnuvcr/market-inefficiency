@@ -1,1 +1,200 @@
-#!/usr/bin/env python3\n"""Phase 14A.0 — acquire PIT NIFTY-50 cash OHLCV from NSE daily bhavcopies.\n\nThe script downloads official per-day NSE cash-market bhavcopy files, applies a\nsecondary PIT NIFTY-50 membership reconstruction, reverses known ticker renames\nby effective date, and keeps only the NIFTY-50 members that were eligible on\neach trading day.\n\nIt is intentionally a discovery-input builder. It does not create adjusted\nprices, infer missing data, or project today's constituent list backwards.\n"""\nfrom __future__ import annotations\n\nimport argparse\nimport csv\nimport json\nimport time\nfrom datetime import date, datetime, timedelta\nfrom pathlib import Path\n\nimport pandas as pd\nimport requests\n\nURL = "https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{ddmmyyyy}.csv"\nKEEP_SERIES = {"EQ", "SM", "BE", "BZ", "ST"}\n\n\ndef load_membership(path: str) -> pd.DataFrame:\n    m = pd.read_csv(path, parse_dates=["valid_from", "valid_to"])\n    m = m[m["index_name"].eq("Nifty 50")].copy()\n    required = {"symbol", "valid_from", "valid_to"}\n    missing = sorted(required - set(m.columns))\n    if missing:\n        raise ValueError(f"membership missing columns: {missing}")\n    return m\n\n\ndef load_renames(path: str) -> list[dict]:\n    obj = json.loads(Path(path).read_text(encoding="utf-8"))\n    return list(obj.get("renames", []))\n\n\ndef actual_symbol(canonical: str, trade_date: pd.Timestamp, renames: list[dict]) -> str:\n    """Reverse canonical rename chains for dates before each rename became effective."""\n    current = canonical\n    # Reverse in latest-effective-date-first order so chained renames resolve cleanly.\n    rules = sorted(\n        [r for r in renames if r.get("old") and r.get("new") and r.get("old") != r.get("new")],\n        key=lambda r: r.get("effective_date") or "1900-01-01",\n        reverse=True,\n    )\n    changed = True\n    while changed:\n        changed = False\n        for rule in rules:\n            effective = rule.get("effective_date")\n            if not effective or str(effective).endswith("XX"):\n                continue\n            effective_ts = pd.Timestamp(effective)\n            if trade_date < effective_ts and current == rule["new"]:\n                current = rule["old"]\n                changed = True\n    return current\n\n\ndef members_on(membership: pd.DataFrame, trade_date: pd.Timestamp, renames: list[dict]) -> dict[str, str]:\n    active = membership[\n        (membership["valid_from"] <= trade_date)\n        & (membership["valid_to"].isna() | (trade_date < membership["valid_to"]))\n    ]\n    out = {}\n    for canonical in sorted(active["symbol"].dropna().astype(str).unique()):\n        out[actual_symbol(canonical, trade_date, renames)] = canonical\n    return out\n\n\ndef parse_bhavcopy(content: bytes, trade_date: pd.Timestamp, universe_raw_to_canonical: dict[str, str], active_raw_symbols: set[str]) -> pd.DataFrame:\n    from io import BytesIO\n    raw = pd.read_csv(BytesIO(content))\n    raw.columns = [str(c).strip() for c in raw.columns]\n    required = {"SYMBOL", "SERIES", "DATE1", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE", "CLOSE_PRICE", "PREV_CLOSE", "TTL_TRD_QNTY", "TURNOVER_LACS"}\n    missing = sorted(required - set(raw.columns))\n    if missing:\n        raise ValueError(f"bhavcopy missing columns: {missing}")\n    raw["SYMBOL"] = raw["SYMBOL"].astype(str).str.strip()\n    raw["SERIES"] = raw["SERIES"].astype(str).str.strip()\n    raw = raw[raw["SERIES"].isin(KEEP_SERIES)]\n    # Keep the union of all historical NIFTY-50 members so a position can be exited\n    # after a constituent leaves the index without survivorship bias. Active membership\n    # is applied only at signal construction time.\n    raw = raw[raw["SYMBOL"].isin(universe_raw_to_canonical.keys())].copy()\n    if raw.empty:\n        return pd.DataFrame(columns=["date", "symbol", "symbol_raw", "series", "open", "high", "low", "close", "prev_close", "volume_shares", "turnover_inr"])\n    raw["date"] = trade_date.date().isoformat()\n    raw["symbol_raw"] = raw["SYMBOL"]\n    raw["symbol"] = raw["SYMBOL"].map(universe_raw_to_canonical)\n    raw["active_nifty50"] = raw["SYMBOL"].isin(active_raw_symbols)\n    for source, target in (("OPEN_PRICE", "open"), ("HIGH_PRICE", "high"), ("LOW_PRICE", "low"), ("CLOSE_PRICE", "close"), ("PREV_CLOSE", "prev_close"), ("TTL_TRD_QNTY", "volume_shares"), ("TURNOVER_LACS", "turnover_inr")):\n        raw[target] = pd.to_numeric(raw[source], errors="coerce")\n    raw["turnover_inr"] = raw["turnover_inr"] * 1e5\n    out = raw[["date", "symbol", "symbol_raw", "active_nifty50", "SERIES", "open", "high", "low", "close", "prev_close", "volume_shares", "turnover_inr"]].rename(columns={"SERIES":"series"})\n    return out\n\n\ndef date_range(start: date, end: date):\n    cur = start\n    one = timedelta(days=1)\n    while cur <= end:\n        if cur.weekday() < 5:\n            yield cur\n        cur += one\n\n\ndef main() -> None:\n    ap = argparse.ArgumentParser()\n    ap.add_argument("--membership", required=True)\n    ap.add_argument("--renames", required=True)\n    ap.add_argument("--start", default="2020-04-13")\n    ap.add_argument("--end", default="2026-05-14")\n    ap.add_argument("--output", required=True)\n    ap.add_argument("--sleep", type=float, default=0.25)\n    args = ap.parse_args()\n\n    start = pd.Timestamp(args.start).date()\n    end = pd.Timestamp(args.end).date()\n    membership = load_membership(args.membership)\n    renames = load_renames(args.renames)\n    # Build the union of every historical canonical member, then reverse each\n    # rename by date to the raw NSE symbol used in that period.\n    canonical_universe = sorted(set(membership["symbol"].dropna().astype(str)))\n    raw_to_canonical: dict[str, str] = {}\n    for d in pd.date_range(start, end, freq="D"):\n        for canonical in canonical_universe:\n            raw_symbol = actual_symbol(canonical, d, renames)\n            if raw_symbol and not raw_symbol.startswith("_DUMMY"):\n                raw_to_canonical[raw_symbol] = canonical\n    session = requests.Session()\n    session.headers.update({"User-Agent": "Mozilla/5.0", "Referer": "https://www.nseindia.com/"})\n\n    rows = []\n    failures = []\n    hits = 0\n    for d in date_range(start, end):\n        trade_date = pd.Timestamp(d)\n        active_map = members_on(membership, trade_date, renames)\n        active_raw_symbols = set(active_map.keys())\n        if not active_raw_symbols:\n            continue\n        url = URL.format(ddmmyyyy=d.strftime("%d%m%Y"))\n        try:\n            resp = session.get(url, timeout=30)\n        except requests.RequestException as exc:\n            failures.append({"date": d.isoformat(), "status": "request_error", "error": str(exc)[:120]})\n            continue\n        if resp.status_code == 404:\n            continue\n        if resp.status_code != 200 or len(resp.content) < 5000:\n            failures.append({"date": d.isoformat(), "status": int(resp.status_code), "size": len(resp.content)})\n            continue\n        try:\n            parsed = parse_bhavcopy(resp.content, trade_date, raw_to_canonical, active_raw_symbols)\n        except Exception as exc:\n            failures.append({"date": d.isoformat(), "status": "parse_error", "error": str(exc)[:120]})\n            continue\n        rows.append(parsed)\n        hits += 1\n        if args.sleep > 0:\n            time.sleep(args.sleep)\n        if hits % 50 == 0:\n            print(f"processed {hits} trading files through {d}", flush=True)\n\n    if not rows:\n        raise SystemExit("no NIFTY-50 rows acquired")\n    df = pd.concat(rows, ignore_index=True)\n    df = df.sort_values(["date", "symbol"]).reset_index(drop=True)\n    out = Path(args.output)\n    out.parent.mkdir(parents=True, exist_ok=True)\n    df.to_csv(out, index=False)\n    manifest = out.with_suffix(".manifest.json")\n    manifest.write_text(json.dumps({\n        "source_url_template": URL,\n        "start": args.start,\n        "end": args.end,\n        "trading_files_with_rows": int(hits),\n        "rows": int(len(df)),\n        "unique_symbols": int(df["symbol"].nunique()),\n        "active_rows": int(df["active_nifty50"].sum()),\n        "min_date": str(df["date"].min()),\n        "max_date": str(df["date"].max()),\n        "failures": failures[:200],\n        "n_failures": len(failures),\n        "membership_source": str(args.membership),\n        "rename_source": str(args.renames),\n    }, indent=2) + "\n", encoding="utf-8")\n    print(f"wrote {out} with {len(df):,} rows; failures={len(failures)}")\n\n\nif __name__ == "__main__":\n    main()
+#!/usr/bin/env python3
+"""Phase 14A.0 — acquire a survivorship-safe historical NIFTY-50 price union from NSE daily cash bhavcopies.
+
+The input membership history is a secondary point-in-time reconstruction. Prices are kept for every
+security that was ever a NIFTY-50 member during the requested period, while `active_nifty50` marks
+membership only on the observation date. This prevents a constituent leaving the index from causing
+an artificial look-ahead when a position is exited after the membership change.
+"""
+from __future__ import annotations
+
+import argparse
+import json
+import time
+from datetime import date, timedelta
+from io import BytesIO
+from pathlib import Path
+
+import pandas as pd
+import requests
+
+URL = "https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_{ddmmyyyy}.csv"
+KEEP_SERIES = {"EQ", "SM", "BE", "BZ", "ST"}
+
+
+def load_membership(path: str) -> pd.DataFrame:
+    m = pd.read_csv(path, parse_dates=["valid_from", "valid_to"])
+    m = m[m["index_name"].eq("Nifty 50")].copy()
+    required = {"symbol", "valid_from", "valid_to"}
+    missing = sorted(required - set(m.columns))
+    if missing:
+        raise ValueError(f"membership missing columns: {missing}")
+    return m
+
+
+def load_renames(path: str) -> list[dict]:
+    obj = json.loads(Path(path).read_text(encoding="utf-8"))
+    return list(obj.get("renames", []))
+
+
+def actual_symbol(canonical: str, trade_date: pd.Timestamp, renames: list[dict]) -> str:
+    current = canonical
+    rules = sorted(
+        [r for r in renames if r.get("old") and r.get("new") and r.get("old") != r.get("new")],
+        key=lambda r: r.get("effective_date") or "1900-01-01",
+        reverse=True,
+    )
+    changed = True
+    while changed:
+        changed = False
+        for rule in rules:
+            effective = rule.get("effective_date")
+            if not effective or str(effective).endswith("XX"):
+                continue
+            effective_ts = pd.Timestamp(effective)
+            if trade_date < effective_ts and current == rule["new"]:
+                current = rule["old"]
+                changed = True
+    return current
+
+
+def members_on(membership: pd.DataFrame, trade_date: pd.Timestamp, renames: list[dict]) -> dict[str, str]:
+    active = membership[
+        (membership["valid_from"] <= trade_date)
+        & (membership["valid_to"].isna() | (trade_date < membership["valid_to"]))
+    ]
+    out: dict[str, str] = {}
+    for canonical in sorted(active["symbol"].dropna().astype(str).unique()):
+        out[actual_symbol(canonical, trade_date, renames)] = canonical
+    return out
+
+
+def parse_bhavcopy(content: bytes, trade_date: pd.Timestamp, universe_raw_to_canonical: dict[str, str], active_raw_symbols: set[str]) -> pd.DataFrame:
+    raw = pd.read_csv(BytesIO(content))
+    raw.columns = [str(c).strip() for c in raw.columns]
+    required = {
+        "SYMBOL", "SERIES", "DATE1", "OPEN_PRICE", "HIGH_PRICE", "LOW_PRICE",
+        "CLOSE_PRICE", "PREV_CLOSE", "TTL_TRD_QNTY", "TURNOVER_LACS"
+    }
+    missing = sorted(required - set(raw.columns))
+    if missing:
+        raise ValueError(f"bhavcopy missing columns: {missing}")
+    raw["SYMBOL"] = raw["SYMBOL"].astype(str).str.strip()
+    raw["SERIES"] = raw["SERIES"].astype(str).str.strip()
+    raw = raw[raw["SERIES"].isin(KEEP_SERIES)]
+    raw = raw[raw["SYMBOL"].isin(universe_raw_to_canonical)].copy()
+    if raw.empty:
+        return pd.DataFrame()
+    raw["date"] = trade_date.date().isoformat()
+    raw["symbol_raw"] = raw["SYMBOL"]
+    raw["symbol"] = raw["SYMBOL"].map(universe_raw_to_canonical)
+    raw["active_nifty50"] = raw["SYMBOL"].isin(active_raw_symbols)
+    for source, target in (
+        ("OPEN_PRICE", "open"), ("HIGH_PRICE", "high"), ("LOW_PRICE", "low"),
+        ("CLOSE_PRICE", "close"), ("PREV_CLOSE", "prev_close"),
+        ("TTL_TRD_QNTY", "volume_shares"), ("TURNOVER_LACS", "turnover_inr"),
+    ):
+        raw[target] = pd.to_numeric(raw[source], errors="coerce")
+    raw["turnover_inr"] = raw["turnover_inr"] * 1e5
+    return raw[[
+        "date", "symbol", "symbol_raw", "active_nifty50", "SERIES", "open", "high",
+        "low", "close", "prev_close", "volume_shares", "turnover_inr"
+    ]].rename(columns={"SERIES": "series"})
+
+
+def date_range(start: date, end: date):
+    cur = start
+    while cur <= end:
+        if cur.weekday() < 5:
+            yield cur
+        cur += timedelta(days=1)
+
+
+def main() -> None:
+    ap = argparse.ArgumentParser()
+    ap.add_argument("--membership", required=True)
+    ap.add_argument("--renames", required=True)
+    ap.add_argument("--start", default="2020-04-13")
+    ap.add_argument("--end", default="2026-05-14")
+    ap.add_argument("--output", required=True)
+    ap.add_argument("--sleep", type=float, default=0.25)
+    args = ap.parse_args()
+
+    start = pd.Timestamp(args.start).date()
+    end = pd.Timestamp(args.end).date()
+    membership = load_membership(args.membership)
+    renames = load_renames(args.renames)
+    canonical_universe = sorted(set(membership["symbol"].dropna().astype(str)))
+
+    raw_to_canonical: dict[str, str] = {}
+    for d in pd.date_range(start, end, freq="D"):
+        for canonical in canonical_universe:
+            raw_symbol = actual_symbol(canonical, d, renames)
+            if raw_symbol and not raw_symbol.startswith("_DUMMY"):
+                raw_to_canonical[raw_symbol] = canonical
+
+    session = requests.Session()
+    session.headers.update({"User-Agent": "Mozilla/5.0", "Referer": "https://www.nseindia.com/"})
+    rows: list[pd.DataFrame] = []
+    failures: list[dict] = []
+    hits = 0
+
+    for d in date_range(start, end):
+        trade_date = pd.Timestamp(d)
+        active_map = members_on(membership, trade_date, renames)
+        active_raw_symbols = set(active_map)
+        if not active_raw_symbols:
+            continue
+        url = URL.format(ddmmyyyy=d.strftime("%d%m%Y"))
+        try:
+            resp = session.get(url, timeout=30)
+        except requests.RequestException as exc:
+            failures.append({"date": d.isoformat(), "status": "request_error", "error": str(exc)[:120]})
+            continue
+        if resp.status_code == 404:
+            continue
+        if resp.status_code != 200 or len(resp.content) < 5000:
+            failures.append({"date": d.isoformat(), "status": int(resp.status_code), "size": len(resp.content)})
+            continue
+        try:
+            parsed = parse_bhavcopy(resp.content, trade_date, raw_to_canonical, active_raw_symbols)
+        except Exception as exc:
+            failures.append({"date": d.isoformat(), "status": "parse_error", "error": str(exc)[:120]})
+            continue
+        if not parsed.empty:
+            rows.append(parsed)
+            hits += 1
+        if args.sleep > 0:
+            time.sleep(args.sleep)
+        if hits and hits % 50 == 0:
+            print(f"processed {hits} files through {d}", flush=True)
+
+    if not rows:
+        raise SystemExit("no NIFTY-50 rows acquired")
+    df = pd.concat(rows, ignore_index=True).sort_values(["date", "symbol_raw"]).reset_index(drop=True)
+    out = Path(args.output)
+    out.parent.mkdir(parents=True, exist_ok=True)
+    df.to_csv(out, index=False)
+    manifest = out.with_suffix(".manifest.json")
+    manifest.write_text(
+        json.dumps({
+            "source_url_template": URL,
+            "start": args.start,
+            "end": args.end,
+            "trading_files_with_rows": int(hits),
+            "rows": int(len(df)),
+            "unique_raw_symbols": int(df["symbol_raw"].nunique()),
+            "unique_canonical_symbols": int(df["symbol"].nunique()),
+            "active_rows": int(df["active_nifty50"].sum()),
+            "min_date": str(df["date"].min()),
+            "max_date": str(df["date"].max()),
+            "n_failures": len(failures),
+            "failures": failures[:200],
+        }, indent=2) + "\n",
+        encoding="utf-8",
+    )
+    print(f"wrote {out} with {len(df):,} rows; failures={len(failures)}")
+
+
+if __name__ == "__main__":
+    main()
