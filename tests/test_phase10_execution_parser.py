@@ -21,7 +21,7 @@ def make_order(length=91):
     fields = [
         pad("RM", 2), pad("FAOb", 4), pad("0000000000000001", 16),
         pad("00000006553600", 14), pad("B", 1), pad("1", 1),
-        pad("bbbbbbNIFTY", 10), pad("OPTIDX", 6), pad("28MAR2027", 9),
+        pad("bbbbbNIFTY", 10), pad("OPTIDX", 6), pad("28MAR2027", 9),
         pad("00250000", 8), pad("PE", 2), pad("00000010", 8),
         pad("00012500", 8), pad("*", 1), pad("Y", 1)
     ]
@@ -36,7 +36,7 @@ def make_order(length=91):
 def make_trade(length=103):
     fields = [
         pad("RM", 2), pad("FAOb", 4), pad("00000006553600", 14),
-        pad("bbbbbbNIFTY", 10), pad("OPTIDX", 6), pad("28MAR2027", 9),
+        pad("bbbbbNIFTY", 10), pad("OPTIDX", 6), pad("28MAR2027", 9),
         pad("00250000", 8), pad("PE", 2), pad("00012500", 8),
         pad("00000010", 8), pad("0000000000000001", 16),
         pad("0000000000000002", 16)
