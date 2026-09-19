@@ -8,11 +8,28 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "scripts"))
 from phase10_download_nse_sample import download
 
 
-def test_download_inventory_with_local_zip(tmp_path):
-    zip_path = tmp_path / "sample.zip"
-    with __import__("zipfile").ZipFile(zip_path, "w") as zf:
+def test_download_inventory_with_mocked_response(tmp_path, monkeypatch):
+    payload = tmp_path / "source.zip"
+    with ZipFile(payload, "w") as zf:
         zf.writestr("sample.csv.gz", b"test")
-    # The function's network behavior is not exercised here; this test only
-    # documents the manifest fields expected from a successful acquisition.
-    assert zip_path.exists()
-    assert hashlib.sha256(zip_path.read_bytes()).hexdigest()
+
+    class FakeResponse:
+        headers = {"content-type": "application/zip"}
+
+        def raise_for_status(self):
+            return None
+
+        @property
+        def content(self):
+            return payload.read_bytes()
+
+    monkeypatch.setattr(
+        "phase10_download_nse_sample.requests.get",
+        lambda *args, **kwargs: FakeResponse(),
+    )
+
+    out = tmp_path / "copy.zip"
+    manifest = download("https://example.invalid/sample.zip", out)
+    assert manifest["bytes"] == out.stat().st_size
+    assert manifest["sha256"] == hashlib.sha256(out.read_bytes()).hexdigest()
+    assert manifest["archive_entries"] == ["sample.csv.gz"]
