@@ -119,8 +119,16 @@ def main()->None:
     primary=nonoverlap(alltr[alltr.signal_value>0].copy())
     long_control=primary.copy(); long_control['ret']=-long_control['ret']
     rng=np.random.default_rng(RNG_SEED)
-    candidate=nonoverlap(alltr.sample(frac=1.0,random_state=RNG_SEED).sort_values('entry'))
-    random_control=candidate.head(len(primary)).copy()
+    shuffled=alltr.sample(frac=1.0,random_state=RNG_SEED).copy()
+    random_rows=[]
+    next_allowed=pd.Timestamp.min
+    for _, row in shuffled.iterrows():
+        if row.entry>next_allowed:
+            random_rows.append(row)
+            next_allowed=row.expiry
+            if len(random_rows)>=len(primary):
+                break
+    random_control=pd.DataFrame(random_rows)
     results={
       'VRP_SHORT_STRADDLE':summarize(primary.ret.to_numpy(float),(primary.premium/primary.spot).to_numpy(float)),
       'SIGN_FLIP_LONG_STRADDLE':summarize(long_control.ret.to_numpy(float),(long_control.premium/long_control.spot).to_numpy(float)),
