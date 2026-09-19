@@ -21,7 +21,7 @@ jobs:
           python-version: '3.12'
       - name: Install dependencies
         run: pip install pandas numpy scipy requests
-      - name: Validate phase scripts
+      - name: Validate phase 14A scripts
         run: pytest -q tests/test_phase14a_acquire_pit_nifty50.py tests/test_phase14a_cross_section_screen.py
       - name: Acquire PIT NIFTY-50 price union
         run: |
