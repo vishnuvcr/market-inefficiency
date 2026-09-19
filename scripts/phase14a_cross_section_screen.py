@@ -91,6 +91,11 @@ def main() -> None:
     if missing:
         raise SystemExit(f"missing columns: {missing}")
     df["active_nifty50"] = df["active_nifty50"].astype(bool)
+    # Prefer the primary EQ series if NSE carries multiple series for the same symbol/date.
+    series_priority = {"EQ":0,"BE":1,"BZ":2,"ST":3,"SM":4}
+    df["_series_priority"] = df.get("series", "EQ").map(series_priority).fillna(99)
+    df = df.sort_values(["symbol","date","_series_priority"]).drop_duplicates(["symbol","date"], keep="first")
+    df = df.drop(columns=["_series_priority"])
     # Daily return proxy uses exchange PREV_CLOSE when available; it avoids raw-price
     # split shocks without inventing an adjusted-price series.
     if "prev_close" in df.columns:
