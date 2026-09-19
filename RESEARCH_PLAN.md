@@ -159,7 +159,13 @@ The library currently covers skew verticals, risk reversals, butterflies and iro
 ### Phase 12 — Execution simulator and cost model
 **Goal:** convert normalized historical order/trade/quote state into leg-level fills, synchronization, slippage, fees, margin and impact.
 
-Status: **blocked on Phase 10 licensed data.**
+Status: **70% — execution mechanics implemented and validated; economic backtest still requires bulk historical data.**
+
+A public TickBytes NIFTY top-of-book/L2 sample has been acquired as a software-validation fixture. The simulator is fail-closed on missing/zero-size/crossed quotes, executes buys at ask and sells at bid, enforces displayed-size capacity and synchronisation, and reports top-of-book spread diagnostics. This sample is not used as a performance dataset.
+
+CI run 35448534215 passed the Phase 10–12 unit-test suite and quote audit.
+
+The official NSE historical order/trade archive remains the required economic-data gate.
 
 ### Phase 13 — Executable CPCV/PBO/DSR validation
 **Goal:** test the full strategy library without post-hoc selection and retain complete path distributions.
