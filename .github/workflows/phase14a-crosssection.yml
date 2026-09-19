@@ -1,0 +1,45 @@
+name: Phase 14A cross-sectional discovery
+on:
+  push:
+    branches:
+      - research/phase9-surface-execution
+    paths:
+      - 'scripts/phase14a_acquire_pit_nifty50.py'
+      - 'scripts/phase14a_cross_section_screen.py'
+      - 'data/phase14/**'
+      - '.github/workflows/phase14a-crosssection.yml'
+  workflow_dispatch:
+
+jobs:
+  screen:
+    runs-on: ubuntu-latest
+    timeout-minutes: 50
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: pip install pandas numpy scipy requests
+      - name: Validate phase scripts
+        run: pytest -q tests/test_phase14a_acquire_pit_nifty50.py tests/test_phase14a_cross_section_screen.py
+      - name: Acquire PIT NIFTY-50 price union
+        run: |
+          mkdir -p data/phase14/runs
+          python scripts/phase14a_acquire_pit_nifty50.py \
+            --membership data/phase14/nifty50_pit_membership.csv \
+            --renames data/phase14/symbol_renames.json \
+            --start 2020-04-13 \
+            --end 2026-05-14 \
+            --output data/phase14/runs/nifty50_price_union.csv \
+            --sleep 0.10
+      - name: Run frozen cross-sectional screen
+        run: |
+          python scripts/phase14a_cross_section_screen.py \
+            --input data/phase14/runs/nifty50_price_union.csv \
+            --output data/phase14/runs/phase14a_cross_section_results.json
+      - name: Upload discovery artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: phase14a-crosssection-${{ github.sha }}
+          path: data/phase14/runs/
